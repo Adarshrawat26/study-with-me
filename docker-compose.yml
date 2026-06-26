@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: saadhak-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: saadhak
+      POSTGRES_PASSWORD: saadhak_dev
+      POSTGRES_DB: saadhak
+    volumes:
+      - saadhak_pg_data:/var/lib/postgresql/data
+
+volumes:
+  saadhak_pg_data:

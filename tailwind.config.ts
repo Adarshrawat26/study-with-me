@@ -10,7 +10,20 @@ const config: Config = {
     extend: {
       colors: {
         background: "var(--background)",
-        foreground: "var(--foreground)",
+        surface: "var(--surface)",
+        border: "var(--border)",
+        primary: "var(--primary)",
+        secondary: "var(--secondary)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        muted: "var(--text-muted)",
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)", "Inter", "sans-serif"],
+        heading: ["var(--font-sora)", "Sora", "sans-serif"],
+      },
+      animation: {
+        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },
