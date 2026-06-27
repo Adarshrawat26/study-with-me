@@ -14,16 +14,16 @@ export function exportStatsImage(data: ExportStats) {
   if (!ctx) return;
 
   const gradient = ctx.createLinearGradient(0, 0, 720, 480);
-  gradient.addColorStop(0, "#1a1030");
-  gradient.addColorStop(1, "#0a0814");
+  gradient.addColorStop(0, "#FFF5F8");
+  gradient.addColorStop(1, "#FCE7F3");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 720, 480);
 
-  ctx.fillStyle = "#fafafa";
+  ctx.fillStyle = "#831843";
   ctx.font = "bold 36px system-ui, sans-serif";
   ctx.fillText("Study with me", 48, 64);
 
-  ctx.fillStyle = "#9494a8";
+  ctx.fillStyle = "#9D174D";
   ctx.font = "16px system-ui, sans-serif";
   ctx.fillText(data.userName ? `${data.userName}'s study stats` : "My study stats", 48, 96);
 
@@ -37,15 +37,15 @@ export function exportStatsImage(data: ExportStats) {
   stats.forEach((stat, i) => {
     const x = 48 + (i % 2) * 320;
     const y = 160 + Math.floor(i / 2) * 120;
-    ctx.fillStyle = "#9494a8";
+    ctx.fillStyle = "#9D174D";
     ctx.font = "12px system-ui, sans-serif";
     ctx.fillText(stat.label.toUpperCase(), x, y);
-    ctx.fillStyle = "#fafafa";
+    ctx.fillStyle = "#831843";
     ctx.font = "bold 40px system-ui, sans-serif";
     ctx.fillText(stat.value, x, y + 44);
   });
 
-  ctx.fillStyle = "#8b5cf6";
+  ctx.fillStyle = "#EC4899";
   ctx.font = "14px system-ui, sans-serif";
   ctx.fillText("Study with me", 48, 440);
 

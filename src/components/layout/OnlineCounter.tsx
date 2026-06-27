@@ -9,7 +9,7 @@ export function OnlineCounter() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (pathname === "/flip-clock") return;
+    if (pathname === "/flip-clock" || pathname === "/embed" || pathname === "/mini") return;
     const fetchCount = async () => {
       try {
         const res = await fetch("/api/online-count");
@@ -25,7 +25,7 @@ export function OnlineCounter() {
     return () => clearInterval(interval);
   }, [pathname]);
 
-  if (pathname === "/flip-clock") return null;
+  if (pathname === "/flip-clock" || pathname === "/embed" || pathname === "/mini") return null;
 
   return (
     <motion.div

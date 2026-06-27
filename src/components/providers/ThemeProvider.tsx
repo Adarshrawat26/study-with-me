@@ -21,8 +21,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeId>("cosmic");
-  const [darkMode, setDarkModeState] = useState(true);
+  const [theme, setThemeState] = useState<ThemeId>("blush");
   const [fontSize, setFontSizeState] = useState<"small" | "medium" | "large">(
     "medium"
   );
@@ -30,14 +29,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("saadhak-theme") as ThemeId | null;
-    const savedDark = localStorage.getItem("saadhak-dark");
     const savedFont = localStorage.getItem("saadhak-font-size") as
       | "small"
       | "medium"
       | "large"
       | null;
-    if (savedTheme) setThemeState(savedTheme);
-    if (savedDark !== null) setDarkModeState(savedDark === "true");
+    if (savedTheme && ["blush", "rose", "blossom", "petal", "fuchsia"].includes(savedTheme)) {
+      setThemeState(savedTheme);
+    }
     if (savedFont) setFontSizeState(savedFont);
     setMounted(true);
   }, []);
@@ -45,20 +44,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
     applyThemeVars(theme);
-    document.documentElement.classList.toggle("dark", darkMode);
+    document.documentElement.classList.remove("dark");
     document.documentElement.dataset.fontSize = fontSize;
     localStorage.setItem("saadhak-theme", theme);
-    localStorage.setItem("saadhak-dark", String(darkMode));
+    localStorage.setItem("saadhak-dark", "false");
     localStorage.setItem("saadhak-font-size", fontSize);
-  }, [theme, darkMode, fontSize, mounted]);
+  }, [theme, fontSize, mounted]);
 
   const setTheme = (t: ThemeId) => setThemeState(t);
-  const setDarkMode = (d: boolean) => setDarkModeState(d);
   const setFontSize = (s: "small" | "medium" | "large") => setFontSizeState(s);
 
   return (
     <ThemeContext.Provider
-      value={{ theme, setTheme, darkMode, setDarkMode, fontSize, setFontSize }}
+      value={{
+        theme,
+        setTheme,
+        darkMode: false,
+        setDarkMode: () => {},
+        fontSize,
+        setFontSize,
+      }}
     >
       {children}
     </ThemeContext.Provider>

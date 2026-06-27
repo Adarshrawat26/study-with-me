@@ -57,27 +57,27 @@ export function TodayStudyTime({
     dailyAvgMinutes > 0 ? (todayMinutes / dailyAvgMinutes) * 100 : todayMinutes > 0 ? 100 : 0;
 
   return (
-    <DashboardCard variant="hero" accent="violet" className="flex h-full flex-col justify-between">
+    <DashboardCard variant="hero" className="flex h-full flex-col justify-between">
       <div>
         <DashboardLabel>Today</DashboardLabel>
         <DashboardStatValue muted={todayMinutes === 0} className="mt-3 sm:text-5xl">
           <AnimatedTimeDisplay minutes={todayMinutes} />
         </DashboardStatValue>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
           {dailyGoalMinutes
             ? `of your daily goal (${formatMinutesHmStatic(dailyGoalMinutes)})`
             : "Keep it up — you're building momentum"}
         </p>
         {todayMinutes === 0 && (
-          <p className="mt-2 inline-flex rounded-full bg-white/5 px-2.5 py-1 text-xs text-zinc-500">
+          <p className="mt-2 inline-flex rounded-full bg-pink-50 px-2.5 py-1 text-xs text-[var(--text-muted)]">
             Start your first session today
           </p>
         )}
       </div>
       <div className="mt-6">
-        <div className="mb-2 flex justify-between text-xs text-zinc-500">
+        <div className="mb-2 flex justify-between text-xs text-[var(--text-muted)]">
           <span>vs 7-day average</span>
-          <span className="font-medium text-zinc-400">
+          <span className="font-medium text-[var(--text)]">
             {formatMinutesHmStatic(dailyAvgMinutes)}/day
           </span>
         </div>

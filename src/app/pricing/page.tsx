@@ -22,7 +22,7 @@ const PLANS = [
     features: [
       "Basic timer (all modes)",
       "3 subject labels",
-      "1 study goal",
+      "10 study goals",
       "Join 3 study groups",
       "10 AI prompts/month",
       "Dashboard & leaderboard",

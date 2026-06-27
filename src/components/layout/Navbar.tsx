@@ -33,7 +33,7 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  if (pathname === "/flip-clock") return null;
+  if (pathname === "/flip-clock" || pathname === "/embed" || pathname === "/mini") return null;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[var(--border-subtle)] bg-[var(--background)]/85 backdrop-blur-xl">

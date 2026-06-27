@@ -6,15 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatDuration } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { useSession } from "next-auth/react";
-import { useAmbientAudio } from "@/hooks/useAmbientAudio";
 import { useMotivationalQuote } from "@/hooks/useMotivationalQuote";
-import { TimerSceneBackground } from "@/components/timer/scenes/TimerSceneBackground";
-import {
-  TIMER_SCENES,
-  SCENE_STORAGE_KEY,
-  sceneToAudio,
-  type TimerSceneId,
-} from "@/lib/timer-scenes";
+import { useMiniTimerFloating } from "@/components/providers/MiniTimerProvider";
+import { writeMiniTimerState } from "@/lib/mini-timer-store";
 
 type TimerMode = "pomodoro" | "stopwatch" | "countdown" | "focus";
 
@@ -54,30 +48,13 @@ export function Timer({
   const [workDuration, setWorkDuration] = useState(25 * 60);
   const [breakDuration, setBreakDuration] = useState(5 * 60);
   const [autoStartBreaks, setAutoStartBreaks] = useState(false);
-  const [miniMode, setMiniMode] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [scene, setScene] = useState<TimerSceneId>("none");
+  const { enableFloating } = useMiniTimerFloating();
   const [labels, setLabels] = useState<Label[]>([]);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const quote = useMotivationalQuote();
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartRef = useRef<number>(0);
-
-  useAmbientAudio(sceneToAudio(scene), muted);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(SCENE_STORAGE_KEY) as TimerSceneId | null;
-    if (saved && TIMER_SCENES.some((s) => s.id === saved)) {
-      setScene(saved);
-    }
-  }, []);
-
-  const selectScene = (id: TimerSceneId) => {
-    const next = scene === id ? "none" : id;
-    setScene(next);
-    localStorage.setItem(SCENE_STORAGE_KEY, next);
-  };
 
   // Load user timer defaults
   useEffect(() => {
@@ -232,7 +209,6 @@ export function Timer({
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.code === "Space") { e.preventDefault(); toggleTimer(); }
       if (e.code === "KeyR") resetTimer();
-      if (e.code === "KeyM") setMuted((m) => !m);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -264,37 +240,23 @@ export function Timer({
     if (mode === "pomodoro") setWorkDuration(secs);
   };
 
-  if (miniMode) {
-    return (
-      <div className="relative min-h-[calc(100vh-4rem)] w-full">
-        <TimerSceneBackground scene={scene} />
-        <motion.div
-          drag
-          dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-          className="fixed bottom-20 left-4 z-50 glass-card cursor-grab px-4 py-3 shadow-2xl active:cursor-grabbing"
-        >
-          <div className="flex items-center gap-3">
-            <span className="font-heading text-2xl font-semibold tabular-nums">
-              {formatDuration(seconds)}
-            </span>
-            <button onClick={toggleTimer} className="btn-primary px-3 py-1.5 text-xs">
-              {isRunning ? "Pause" : "Start"}
-            </button>
-            <button onClick={() => setMiniMode(false)} className="btn-ghost text-xs">
-              Expand
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+  const enterMiniMode = useCallback(() => {
+    writeMiniTimerState({
+      seconds,
+      initialSeconds,
+      isRunning,
+      mode,
+      isBreak,
+      workDuration,
+      updatedAt: Date.now(),
+    });
+    enableFloating();
+  }, [seconds, initialSeconds, isRunning, mode, isBreak, workDuration, enableFloating]);
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] w-full">
-      <TimerSceneBackground scene={scene} />
-
       <div className="relative z-[1] mx-auto flex w-full max-w-xl flex-col items-center px-5 py-12">
-        <div className={cn("timer-panel", scene !== "none" && "border-[var(--border)]/60")}>
+        <div className="timer-panel">
           {/* Mode tabs */}
           <div className="mb-10 flex w-full max-w-sm rounded-[var(--radius)] border border-[var(--border-subtle)] bg-[var(--surface)] p-1">
         {(["pomodoro", "stopwatch", "countdown", "focus"] as TimerMode[]).map((m) => (
@@ -444,47 +406,22 @@ export function Timer({
         </div>
       )}
 
-          {/* Scene picker */}
-          <div className="mb-8 w-full">
-            <div className="mb-3 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-              <span className="stat-label">Scene</span>
-              {sceneToAudio(scene) && (
-                <button onClick={() => setMuted((m) => !m)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">
-                  {muted ? "Unmute" : "Mute sound"}
-                </button>
-              )}
-            </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {TIMER_SCENES.filter((s) => s.id !== "none").map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => selectScene(id)}
-              className={cn(
-                "pill",
-                scene === id ? "pill-active" : "text-[var(--text-muted)] hover:border-[var(--border)]"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {scene !== "none" && (
-          <button
-            onClick={() => selectScene("none")}
-            className="mt-3 w-full text-center text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
-          >
-            Clear scene
-          </button>
-        )}
-      </div>
-
       <p className="mb-6 max-w-sm text-center text-sm leading-relaxed text-[var(--text-muted)]">
         &ldquo;{quote}&rdquo;
       </p>
 
-          <button onClick={() => setMiniMode(true)} className="text-xs text-[var(--text-muted)] underline-offset-4 hover:text-[var(--text)] hover:underline">
-            Mini mode
-          </button>
+          <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={enterMiniMode}
+              className="text-xs font-medium text-pink-500 underline-offset-4 hover:text-pink-400 hover:underline"
+            >
+              Mini mode — float on any page
+            </button>
+            <Link href="/mini" className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">
+              Embed on other sites →
+            </Link>
+          </div>
 
           <div className="mt-8 w-full border-t border-[var(--border-subtle)] pt-6">
             <p className="stat-label mb-3">Free tools</p>

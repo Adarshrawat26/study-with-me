@@ -24,38 +24,38 @@ export function PlantMiniWidget({
   const xpPercent = nextStageXP ? Math.min(100, (plantXP / nextStageXP) * 100) : 100;
 
   return (
-    <DashboardCard variant="stat" accent="emerald" className="flex h-full flex-col items-center text-center">
+    <DashboardCard variant="stat" className="flex h-full flex-col items-center text-center">
       <DashboardLabel>Your plant</DashboardLabel>
       <div
         className={cn(
-          "relative my-4 rounded-2xl bg-emerald-500/5 px-6 py-3",
+          "relative my-4 rounded-2xl border border-pink-100/80 bg-gradient-to-b from-pink-50/80 to-white px-6 py-4 shadow-inner",
           isWilting && "opacity-60 grayscale"
         )}
       >
         <PlantVisual stage={plantStage} wilting={isWilting} size="sm" />
       </div>
-      <p className="font-heading text-sm font-semibold text-white">{plantStageName}</p>
+      <p className="font-heading text-sm font-semibold text-[var(--text)]">{plantStageName}</p>
       {nextStageXP ? (
         <>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
             {plantXP} / {nextStageXP} XP to next stage
           </p>
           <div className="mt-3 w-full">
             <AnimatedWidthBar
               percent={xpPercent}
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-400"
+              className="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600"
             />
           </div>
         </>
       ) : (
-        <p className="mt-1 text-xs font-medium text-emerald-400">Max stage reached</p>
+        <p className="mt-1 text-xs font-medium text-pink-500">Max stage reached</p>
       )}
       {isWilting && (
-        <p className="mt-2 text-xs text-amber-400">Wilting — study today to revive</p>
+        <p className="mt-2 text-xs text-pink-600">Wilting — study today to revive</p>
       )}
       <Link
         href="/study-plant"
-        className="mt-4 text-sm font-medium text-violet-400 transition-colors hover:text-violet-300"
+        className="mt-4 text-sm font-medium text-[var(--primary)] transition-colors hover:text-[var(--secondary)]"
       >
         View plant →
       </Link>

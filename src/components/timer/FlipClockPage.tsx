@@ -17,7 +17,7 @@ export function FlipClockPage() {
   const initialSeconds = parseInt(searchParams.get("seconds") ?? "0", 10);
 
   const [mode, setMode] = useState<ClockMode>(initialSeconds > 0 ? "countdown" : "wall");
-  const [themeId, setThemeId] = useState<ThemeId>("cosmic");
+  const [themeId, setThemeId] = useState<ThemeId>("blush");
   const [now, setNow] = useState(new Date());
   const [seconds, setSeconds] = useState(initialSeconds > 0 ? initialSeconds : 25 * 60);
   const [initialCountdown] = useState(initialSeconds > 0 ? initialSeconds : 25 * 60);

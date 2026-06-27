@@ -58,7 +58,7 @@ export const PLANT_STAGES = [
 
 export const FREE_LIMITS = {
   labels: 3,
-  goals: 1,
+  goals: 10,
   groups: 3,
   aiPrompts: 10,
 };

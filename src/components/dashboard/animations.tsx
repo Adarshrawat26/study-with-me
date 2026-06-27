@@ -44,12 +44,12 @@ export function AnimatedWidthBar({
   className?: string;
 }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-pink-100">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${Math.min(100, percent)}%` }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className={className ?? "h-full rounded-full bg-gradient-to-r from-[#7C3AED] to-[#06B6D4]"}
+        className={className ?? "h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600"}
       />
     </div>
   );

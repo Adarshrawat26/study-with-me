@@ -16,20 +16,19 @@ export function StreakCard({ currentStreak }: { currentStreak: number }) {
   return (
     <DashboardCard
       variant="stat"
-      accent="amber"
       className={cn(
         "h-full",
-        golden && "border-amber-400/30 shadow-[0_0_32px_rgba(251,191,36,0.12)]",
-        rainbow && "border-violet-400/30"
+        golden && "border-pink-300 shadow-[0_0_32px_rgba(244,114,182,0.15)]",
+        rainbow && "border-pink-400"
       )}
     >
       {rainbow && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-40"
+          className="pointer-events-none absolute inset-0 opacity-50"
           style={{
             background:
-              "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.12), rgba(251,191,36,0.1))",
+              "linear-gradient(135deg, rgba(251,207,232,0.4), rgba(244,114,182,0.2), rgba(236,72,153,0.15))",
           }}
         />
       )}
@@ -41,7 +40,7 @@ export function StreakCard({ currentStreak }: { currentStreak: number }) {
               <DashboardStatValue>
                 <CountUp value={currentStreak} />
               </DashboardStatValue>
-              <span className="mb-1.5 text-sm text-zinc-400">days</span>
+              <span className="mb-1.5 text-sm text-[var(--text-muted)]">days</span>
               <motion.span
                 animate={{ scale: [1, 1.15, 1] }}
                 transition={{ repeat: Infinity, duration: 2 }}
@@ -51,7 +50,7 @@ export function StreakCard({ currentStreak }: { currentStreak: number }) {
               </motion.span>
             </>
           ) : (
-            <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+            <p className="mt-1 text-sm leading-relaxed text-[var(--text-muted)]">
               Study today to start your streak
             </p>
           )}

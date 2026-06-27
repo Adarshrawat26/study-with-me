@@ -9,6 +9,8 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const protectedRoutes = [
+        "/dashboard",
+        "/labels",
         "/habits",
         "/goals",
         "/groups",

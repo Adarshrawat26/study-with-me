@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
 
 interface Goal {
   id: string;
@@ -51,7 +52,9 @@ export default function GoalsPage() {
           </div>
           <button onClick={createGoal} className="btn-primary">Add goal</button>
         </div>
-        <p className="mt-3 text-xs text-[var(--text-muted)]">Free: 1 · Premium: 50</p>
+        <p className="mt-3 text-xs text-[var(--text-muted)]">
+          Free: {FREE_LIMITS.goals} · Premium: {PREMIUM_LIMITS.goals}
+        </p>
       </div>
 
       <div className="mt-6 space-y-3">

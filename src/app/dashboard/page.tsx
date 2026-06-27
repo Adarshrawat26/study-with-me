@@ -1,11 +1,7 @@
-import Link from "next/link";
 import { format } from "date-fns";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import {
-  getDashboardData,
-  getDemoDashboardData,
-  getGreeting,
-} from "@/lib/dashboard-data";
+import { getDashboardData, getGreeting } from "@/lib/dashboard-data";
 import { TodayStudyTime } from "@/components/dashboard/TodayStudyTime";
 import { StreakCard } from "@/components/dashboard/StreakCard";
 import { LongestStreakCard } from "@/components/dashboard/LongestStreakCard";
@@ -111,18 +107,11 @@ function DashboardContent({ data }: { data: DashboardData }) {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const isDemo = !session?.user?.id;
-
-  let data: DashboardData;
-  if (isDemo) {
-    data = getDemoDashboardData();
-  } else {
-    try {
-      data = await getDashboardData(session.user!.id!, session.user!.name);
-    } catch {
-      data = getDemoDashboardData();
-    }
+  if (!session?.user?.id) {
+    redirect("/auth/signin?callbackUrl=/dashboard");
   }
+
+  const data = await getDashboardData(session.user.id, session.user.name);
 
   const greeting = getGreeting(data.userName);
   const firstName = data.userName.split(" ")[0];
@@ -132,30 +121,16 @@ export default async function DashboardPage() {
   return (
     <div className="dashboard-page min-h-screen px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-8">
       <div className="relative mx-auto w-full max-w-[1400px]">
-        {isDemo && (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3">
-            <p className="text-sm text-violet-200">
-              Preview mode — sample data shown. Sign in to track your real stats.
-            </p>
-            <Link
-              href="/auth/signin?callbackUrl=/dashboard"
-              className="rounded-full bg-violet-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-violet-500"
-            >
-              Sign in
-            </Link>
-          </div>
-        )}
-
-        <header className="mb-8 border-b border-white/[0.06] pb-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-400/90">
+        <header className="mb-8 border-b border-neutral-100 pb-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">
             Your study overview
           </p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight text-[var(--text)] sm:text-4xl">
             {timeGreeting},{" "}
             <span className="gradient-text">{firstName}</span>{" "}
             <span className="inline-block animate-[wave_2s_ease-in-out_infinite]">👋</span>
           </h1>
-          <p className="mt-2 text-sm text-zinc-500">{dateLabel}</p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{dateLabel}</p>
         </header>
 
         <DashboardContent data={data} />

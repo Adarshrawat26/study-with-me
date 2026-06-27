@@ -4,34 +4,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatDuration } from "@/lib/utils";
-import { TimerSceneBackground } from "@/components/timer/scenes/TimerSceneBackground";
-import {
-  TIMER_SCENES,
-  SCENE_STORAGE_KEY,
-  sceneToAudio,
-  type TimerSceneId,
-} from "@/lib/timer-scenes";
-import { useAmbientAudio } from "@/hooks/useAmbientAudio";
 import { useMotivationalQuote } from "@/hooks/useMotivationalQuote";
-import { cn } from "@/lib/utils";
 
 /** Distraction-free minimalist timer — large digits, no clutter. */
 export function MinimalTimer({ defaultMinutes = 25 }: { defaultMinutes?: number }) {
   const [seconds, setSeconds] = useState(defaultMinutes * 60);
   const [initialSeconds, setInitialSeconds] = useState(defaultMinutes * 60);
   const [running, setRunning] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [scene, setScene] = useState<TimerSceneId>("none");
   const [showPanel, setShowPanel] = useState(false);
   const quote = useMotivationalQuote();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useAmbientAudio(sceneToAudio(scene), muted);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(SCENE_STORAGE_KEY) as TimerSceneId | null;
-    if (saved && TIMER_SCENES.some((s) => s.id === saved)) setScene(saved);
-  }, []);
 
   const tick = useCallback(() => {
     setSeconds((s) => {
@@ -59,7 +41,6 @@ export function MinimalTimer({ defaultMinutes = 25 }: { defaultMinutes?: number 
       if (e.target instanceof HTMLInputElement) return;
       if (e.code === "Space") { e.preventDefault(); setRunning((r) => !r); }
       if (e.code === "KeyR") { setRunning(false); setSeconds(initialSeconds); }
-      if (e.code === "KeyM") setMuted((m) => !m);
       if (e.code === "Escape") setShowPanel(false);
     };
     window.addEventListener("keydown", handler);
@@ -68,8 +49,6 @@ export function MinimalTimer({ defaultMinutes = 25 }: { defaultMinutes?: number 
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] w-full">
-      <TimerSceneBackground scene={scene} />
-
       <div className="relative z-[1] flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6">
         <motion.p
           initial={{ opacity: 0 }}
@@ -127,34 +106,13 @@ export function MinimalTimer({ defaultMinutes = 25 }: { defaultMinutes?: number 
                 setInitialSeconds(m * 60);
                 if (!running) setSeconds(m * 60);
               }}
-              className="input-field mb-4"
+              className="input-field"
             />
-            <p className="stat-label mb-2">Scene</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {TIMER_SCENES.filter((s) => s.id !== "none").map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    const next = scene === id ? "none" : id;
-                    setScene(next);
-                    localStorage.setItem(SCENE_STORAGE_KEY, next);
-                  }}
-                  className={cn("pill text-xs", scene === id && "pill-active")}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {sceneToAudio(scene) && (
-              <button onClick={() => setMuted((m) => !m)} className="mt-3 text-xs text-[var(--text-muted)]">
-                {muted ? "Unmute" : "Mute"}
-              </button>
-            )}
           </motion.div>
         )}
 
         <p className="mt-6 text-xs text-[var(--text-muted)]">
-          Space start/pause · R reset · M mute
+          Space start/pause · R reset
         </p>
       </div>
     </div>

@@ -12,6 +12,8 @@ import { DashboardCard, DashboardSectionHeader } from "./DashboardCard";
 import { formatMinutesHm } from "@/lib/dashboard-data";
 import type { LabelBreakdownItem } from "@/types/dashboard";
 
+const PINK_CHART = ["#F9A8D4", "#F472B6", "#EC4899", "#DB2777", "#FBCFE8", "#BE185D"];
+
 function DonutTooltip({
   active,
   payload,
@@ -22,9 +24,9 @@ function DonutTooltip({
   if (!active || !payload?.length) return null;
   const item = payload[0].payload;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A0A0F]/90 px-3 py-2 text-sm backdrop-blur-md">
-      <p className="font-medium text-white">{item.name}</p>
-      <p className="text-zinc-400">
+    <div className="rounded-lg border border-pink-200 bg-white px-3 py-2 text-sm shadow-lg shadow-pink-100">
+      <p className="font-medium text-pink-900">{item.name}</p>
+      <p className="text-pink-600">
         {formatMinutesHm(item.totalMinutes)} ({Math.round(item.percent * 100)}%)
       </p>
     </div>
@@ -39,30 +41,33 @@ export function SubjectDonutChart({
   weekTotalHours: number;
 }) {
   const totalMinutes = data.reduce((s, d) => s + d.totalMinutes, 0);
-  const chartData = data.map((d) => ({
+  const chartData = data.map((d, i) => ({
     ...d,
     percent: totalMinutes > 0 ? d.totalMinutes / totalMinutes : 0,
+    chartColor: d.color?.startsWith("#") ? d.color : PINK_CHART[i % PINK_CHART.length],
   }));
 
   if (data.length === 0) {
     return (
       <DashboardCard className="flex flex-col items-center justify-center text-center">
         <DashboardSectionHeader title="By subject" />
-          <span className="text-4xl">📊</span>
-          <p className="mt-3 text-sm text-zinc-500">Add subjects to track where your time goes</p>
-          <Link href="/labels" className="mt-4 text-sm text-violet-400 hover:text-violet-300">
-            Add your first label →
-          </Link>
-        </DashboardCard>
+        <span className="text-4xl">📊</span>
+        <p className="mt-3 text-sm text-[var(--text-muted)]">
+          Add subjects to track where your time goes
+        </p>
+        <Link href="/labels" className="mt-4 text-sm text-[var(--primary)] hover:text-[var(--secondary)]">
+          Add your first label →
+        </Link>
+      </DashboardCard>
     );
   }
 
   return (
     <DashboardCard className="flex flex-col">
       <DashboardSectionHeader title="By subject" badge={`${weekTotalHours}h`} />
-        <div className="relative mx-auto w-full max-w-[220px]">
-          <div className="h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+      <div className="relative mx-auto w-full max-w-[220px]">
+        <div className="h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
@@ -74,28 +79,33 @@ export function SubjectDonutChart({
                 animationDuration={800}
               >
                 {chartData.map((entry) => (
-                  <Cell key={entry.labelId} fill={entry.color} stroke="transparent" />
+                  <Cell key={entry.labelId} fill={entry.chartColor} stroke="transparent" />
                 ))}
               </Pie>
               <Tooltip content={<DonutTooltip />} />
             </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="font-heading text-xl font-semibold text-white">{weekTotalHours}h</span>
-          </div>
+          </ResponsiveContainer>
         </div>
-        <ul className="mt-3 space-y-2">
-          {chartData.map((item) => (
-            <li key={item.labelId} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-zinc-300">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                {item.name}
-              </span>
-              <span className="text-zinc-500">{Math.round(item.percent * 100)}%</span>
-            </li>
-          ))}
-        </ul>
-      </DashboardCard>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="font-heading text-xl font-semibold text-[var(--text)]">
+            {weekTotalHours}h
+          </span>
+        </div>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {chartData.map((item) => (
+          <li key={item.labelId} className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2 text-[var(--text)]">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: item.chartColor }}
+              />
+              {item.name}
+            </span>
+            <span className="text-[var(--text-muted)]">{Math.round(item.percent * 100)}%</span>
+          </li>
+        ))}
+      </ul>
+    </DashboardCard>
   );
 }

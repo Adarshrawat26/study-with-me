@@ -15,11 +15,11 @@ import type { HeatmapCell } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
 
 function intensityClass(minutes: number) {
-  if (minutes === 0) return "bg-zinc-800";
-  if (minutes <= 30) return "bg-violet-900";
-  if (minutes <= 60) return "bg-violet-700";
-  if (minutes <= 120) return "bg-violet-500";
-  return "bg-violet-400";
+  if (minutes === 0) return "bg-pink-100";
+  if (minutes <= 30) return "bg-pink-200";
+  if (minutes <= 60) return "bg-pink-300";
+  if (minutes <= 120) return "bg-pink-400";
+  return "bg-pink-500";
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -107,13 +107,13 @@ export function ActivityHeatmap({
   }, [grid]);
 
   return (
-    <DashboardCard className="relative overflow-hidden" accent="violet">
+    <DashboardCard className="relative overflow-hidden">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <h3 className="font-heading text-base font-semibold tracking-tight text-white">Activity</h3>
+        <h3 className="font-heading text-base font-semibold tracking-tight text-[var(--text)]">Activity</h3>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300 outline-none transition focus:border-violet-500/50"
+          className="rounded-lg border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs text-[var(--text)] outline-none transition focus:border-pink-400"
         >
           {years.map((y) => (
             <option key={y} value={y}>
@@ -129,7 +129,7 @@ export function ActivityHeatmap({
             {monthPositions.map(({ month, col }) => (
               <span
                 key={`${month}-${col}`}
-                className="absolute text-[10px] text-zinc-500"
+                className="absolute text-[10px] text-[var(--text-muted)]"
                 style={{ left: col * 13 }}
               >
                 {month}
@@ -139,7 +139,7 @@ export function ActivityHeatmap({
           <div className="flex gap-[3px]">
             <div className="flex flex-col gap-[3px] pt-0.5">
               {DAY_LABELS.map((label, i) => (
-                <span key={i} className="flex h-[10px] w-6 items-center text-[9px] text-zinc-600">
+                <span key={i} className="flex h-[10px] w-6 items-center text-[9px] text-pink-400">
                   {label}
                 </span>
               ))}
@@ -155,7 +155,7 @@ export function ActivityHeatmap({
                       key={di}
                       title={`${format(cell.date, "MMM d")} — ${formatMinutesHm(cell.minutes)}`}
                       className={cn(
-                        "h-[10px] w-[10px] rounded-sm transition-colors hover:ring-1 hover:ring-violet-400/50",
+                        "h-[10px] w-[10px] rounded-sm transition-colors hover:ring-1 hover:ring-pink-400/60",
                         intensityClass(cell.minutes)
                       )}
                     />
@@ -165,13 +165,13 @@ export function ActivityHeatmap({
             ))}
           </div>
         </div>
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className="mt-4 text-sm text-[var(--text-muted)]">
           {yearStats.hours} hours across {yearStats.days} days in {selectedYear}
         </p>
         {!isPremium && (
-          <p className="mt-2 text-xs text-zinc-600">
+          <p className="mt-2 text-xs text-pink-500">
             Showing this year ·{" "}
-            <Link href="/pricing" className="text-violet-400 hover:text-violet-300">
+            <Link href="/pricing" className="text-[var(--primary)] hover:text-[var(--secondary)]">
               Upgrade for 2+ years of history
             </Link>
           </p>
