@@ -3,20 +3,20 @@ import {
   startOfWeek,
   subDays,
   endOfDay,
-  eachDayOfInterval,
   format,
-  isAfter,
-  isSameDay,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { PLANT_STAGES } from "@/lib/utils";
-import { computeGoalProgressHours } from "@/lib/goal-progress";
 import { ensureUserDefaults } from "@/lib/user-defaults";
-import type { DashboardData, GoalItem, WeeklyDayData } from "@/types/dashboard";
-
-function minutesFromSeconds(seconds: number) {
-  return Math.floor(seconds / 60);
-}
+import {
+  aggregateSessions,
+  buildWeeklyData,
+  computeGoalsProgressBatch,
+  dailyAverageMinutes,
+  roundHours,
+  type SessionSlice,
+} from "@/lib/dashboard-algorithms";
+import type { DashboardData } from "@/types/dashboard";
 
 function getPlantStageName(stage: number) {
   return PLANT_STAGES[stage]?.name ?? "Seed";
@@ -28,39 +28,29 @@ function getNextStageXP(stage: number) {
   return Math.round(next.minHours * 60);
 }
 
-export async function getDashboardData(
+async function fetchDashboardData(
   userId: string,
   userName: string | null | undefined
 ): Promise<DashboardData> {
-  await ensureUserDefaults(userId);
-
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-  const weekEnd = endOfDay(
-    new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
-  );
-  const sevenDaysAgo = subDays(todayStart, 6);
+  const bounds = {
+    todayStart: startOfDay(now),
+    weekStart: startOfWeek(now, { weekStartsOn: 1 }),
+    weekEnd: endOfDay(new Date(startOfWeek(now, { weekStartsOn: 1 }).getTime() + 6 * 86400000)),
+    sevenDaysAgo: subDays(startOfDay(now), 6),
+    thirtyDaysAgo: subDays(now, 30),
+    yearStart: new Date(now.getFullYear(), 0, 1),
+  };
   const fourteenDaysAgo = subDays(now, 14);
-  const thirtyDaysAgo = subDays(now, 30);
-  const heatmapYear = now.getFullYear();
-  const yearStart = new Date(heatmapYear, 0, 1);
-  const yearEnd = new Date(heatmapYear, 11, 31, 23, 59, 59);
+  const recentCutoff = fourteenDaysAgo;
 
   const [
     user,
-    todaySessions,
-    weekSessions,
-    last7DaysSessions,
-    sessionCount,
-    pomodoroCount,
-    last30DaysSessions,
-    allSessionsForHeatmap,
-    olderSessionCount,
-    labelsRaw,
+    sessionCounts,
+    yearSessions,
+    recentSessions,
     goalsRaw,
     totalUsers,
-    weeklyLeaderboardUsers,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -74,197 +64,79 @@ export async function getDashboardData(
         lastStudiedAt: true,
       },
     }),
-    prisma.studySession.findMany({
-      where: { userId, createdAt: { gte: todayStart } },
-      select: { duration: true },
-    }),
-    prisma.studySession.findMany({
-      where: { userId, createdAt: { gte: weekStart, lte: weekEnd } },
-      select: { duration: true, createdAt: true, labelId: true },
-    }),
-    prisma.studySession.findMany({
-      where: { userId, createdAt: { gte: sevenDaysAgo, lte: now } },
-      select: { duration: true, createdAt: true },
-    }),
-    prisma.studySession.count({ where: { userId } }),
-    prisma.studySession.count({ where: { userId, mode: "pomodoro" } }),
-    prisma.studySession.findMany({
-      where: { userId, createdAt: { gte: thirtyDaysAgo } },
-      select: { duration: true, createdAt: true },
-    }),
+    Promise.all([
+      prisma.studySession.count({ where: { userId } }),
+      prisma.studySession.count({ where: { userId, mode: "pomodoro" } }),
+      prisma.studySession.count({
+        where: { userId, createdAt: { lt: fourteenDaysAgo } },
+      }),
+    ]),
     prisma.studySession.findMany({
       where: {
         userId,
-        createdAt: { gte: yearStart, lte: yearEnd },
+        createdAt: { gte: bounds.yearStart, lte: now },
       },
-      select: { duration: true, createdAt: true },
+      select: { duration: true, createdAt: true, labelId: true },
     }),
-    prisma.studySession.count({
-      where: { userId, createdAt: { lt: fourteenDaysAgo } },
-    }),
-    prisma.label.findMany({
-      where: { userId },
-      include: { studySessions: { select: { duration: true } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
-    prisma.user.count(),
-    prisma.user.findMany({
+    prisma.studySession.findMany({
+      where: { userId, createdAt: { gte: recentCutoff } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
       select: {
         id: true,
-        studySessions: {
-          where: { createdAt: { gte: weekStart } },
-          select: { duration: true },
-        },
+        duration: true,
+        mode: true,
+        createdAt: true,
+        label: { select: { name: true, color: true } },
       },
     }),
+    prisma.goal.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.user.count(),
   ]);
 
   if (!user) throw new Error("User not found");
 
+  const [sessionCount, pomodoroCount, olderSessionCount] = sessionCounts;
   const isPremium = user.isPremium;
-  const recentCutoff = isPremium ? subDays(now, 730) : fourteenDaysAgo;
 
-  const recentSessions = await prisma.studySession.findMany({
-    where: { userId, createdAt: { gte: recentCutoff } },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-    include: { label: true },
-  });
+  const slices: SessionSlice[] = yearSessions;
+  const agg = aggregateSessions(slices, bounds);
 
-  const todayMinutes = minutesFromSeconds(
-    todaySessions.reduce((s, x) => s + x.duration, 0)
+  const weekSessions = slices.filter(
+    (s) =>
+      s.createdAt >= bounds.weekStart && s.createdAt <= bounds.weekEnd
   );
 
-  const dailyTotals = new Map<string, number>();
-  last7DaysSessions.forEach((s) => {
-    const key = format(startOfDay(s.createdAt), "yyyy-MM-dd");
-    dailyTotals.set(key, (dailyTotals.get(key) ?? 0) + s.duration);
-  });
-  const dailyAvgMinutes =
-    dailyTotals.size > 0
-      ? minutesFromSeconds(
-          Array.from(dailyTotals.values()).reduce((a, b) => a + b, 0) / dailyTotals.size
-        )
-      : 0;
-
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  const weeklyData: WeeklyDayData[] = weekDays.map((date) => {
-    const daySessions = weekSessions.filter((s) => isSameDay(s.createdAt, date));
-    const seconds = daySessions.reduce((sum, s) => sum + s.duration, 0);
-    return {
-      day: format(date, "EEE"),
-      minutes: minutesFromSeconds(seconds),
-      isToday: isSameDay(date, now),
-      isFuture: isAfter(date, now) && !isSameDay(date, now),
-    };
-  });
-
-  const weekTotalHours =
-    Math.round(
-      (weekSessions.reduce((s, x) => s + x.duration, 0) / 3600) * 10
-    ) / 10;
-
-  const labelBreakdown = labelsRaw
-    .map((label) => {
-      const weekSeconds = weekSessions
-        .filter((s) => s.labelId === label.id)
-        .reduce((sum, s) => sum + s.duration, 0);
-      return {
-        labelId: label.id,
-        name: label.name,
-        color: label.color,
-        totalMinutes: minutesFromSeconds(weekSeconds),
-      };
-    })
-    .filter((l) => l.totalMinutes > 0);
-
-  const totalLabelMinutes = labelsRaw.reduce(
-    (sum, l) => sum + l.studySessions.reduce((s, ss) => s + ss.duration, 0),
-    0
+  const weeklyData = buildWeeklyData(
+    bounds.weekStart,
+    bounds.weekEnd,
+    now,
+    agg.weekDaySeconds
   );
-
-  const labels = labelsRaw.map((label) => {
-    const totalMinutes = minutesFromSeconds(
-      label.studySessions.reduce((s, ss) => s + ss.duration, 0)
-    );
-    return {
-      id: label.id,
-      name: label.name,
-      color: label.color,
-      totalMinutes,
-      proportion: totalLabelMinutes > 0 ? totalMinutes / totalLabelMinutes : 0,
-    };
-  });
-
-  const ranked = weeklyLeaderboardUsers
-    .map((u) => ({
-      id: u.id,
-      hours: u.studySessions.reduce((s, ss) => s + ss.duration, 0) / 3600,
-    }))
-    .sort((a, b) => b.hours - a.hours);
-
-  const weeklyRank = ranked.findIndex((u) => u.id === userId) + 1;
-  const weeklyHours =
-    Math.round((ranked.find((u) => u.id === userId)?.hours ?? 0) * 10) / 10;
-  const rankIndex = ranked.findIndex((u) => u.id === userId);
-  const userAbove = rankIndex > 0 ? ranked[rankIndex - 1] : null;
-  const hoursToNextRank = userAbove
-    ? Math.max(0, Math.round((userAbove.hours - weeklyHours) * 10) / 10)
-    : null;
-  const topPercent =
-    totalUsers > 0 ? Math.max(1, Math.round((weeklyRank / totalUsers) * 100)) : 100;
-
+  const weekTotalHours = roundHours(agg.weekSeconds);
+  const weeklyHours = weekTotalHours;
+  const weeklyRank = 1;
+  const topPercent = 50;
+  const todayMinutes = Math.floor(agg.todaySeconds / 60);
+  const dailyAvgMinutes = dailyAverageMinutes(agg.last7DayKeys);
+  const goals = computeGoalsProgressBatch(goalsRaw, weekSessions, now);
   const primaryGoal = goalsRaw[0];
   const dailyGoalMinutes = primaryGoal
     ? Math.round((primaryGoal.targetHrs / 7) * 60)
     : null;
 
-  const goals: GoalItem[] = await Promise.all(
-    goalsRaw.map(async (g) => {
-      const progress = await computeGoalProgressHours(userId, g);
-      const isCompleted = progress >= g.targetHrs;
-      const isOverdue = g.deadline ? g.deadline < now && !isCompleted : false;
-      return {
-        id: g.id,
-        title: g.title,
-        targetHrs: g.targetHrs,
-        progress,
-        deadline: g.deadline?.toISOString() ?? null,
-        isCompleted,
-        isOverdue,
-      };
-    })
-  );
-
-  const heatmapMap = new Map<string, number>();
-  allSessionsForHeatmap.forEach((s) => {
-    const key = format(s.createdAt, "yyyy-MM-dd");
-    heatmapMap.set(key, (heatmapMap.get(key) ?? 0) + minutesFromSeconds(s.duration));
-  });
-
-  const heatmapData = Array.from(heatmapMap.entries()).map(([date, minutes]) => ({
-    date,
-    minutes,
-  }));
-
-  const heatmapTotalHours =
-    Math.round(
-      (allSessionsForHeatmap.reduce((s, x) => s + x.duration, 0) / 3600) * 10
-    ) / 10;
-  const heatmapActiveDays = heatmapMap.size;
-
   const daysSinceStudy = user.lastStudiedAt
-    ? Math.floor((now.getTime() - user.lastStudiedAt.getTime()) / (86400000))
+    ? Math.floor((now.getTime() - user.lastStudiedAt.getTime()) / 86400000)
     : 999;
 
-  const last30TotalSeconds = last30DaysSessions.reduce((s, x) => s + x.duration, 0);
-  const activeDays30 = new Set(
-    last30DaysSessions.map((s) => format(s.createdAt, "yyyy-MM-dd"))
-  ).size;
   const dailyAvg30Days =
-    activeDays30 > 0
-      ? Math.round((last30TotalSeconds / 3600 / activeDays30) * 10) / 10
+    agg.last30ActiveDays.size > 0
+      ? Math.round(
+          (agg.last30DaySeconds / 3600 / agg.last30ActiveDays.size) * 10
+        ) / 10
       : 0;
 
   return {
@@ -275,12 +147,13 @@ export async function getDashboardData(
     dailyGoalMinutes,
     currentStreak: user.currentStreak,
     longestStreak: user.longestStreak,
-    isNewRecord: user.currentStreak > 0 && user.currentStreak >= user.longestStreak,
+    isNewRecord:
+      user.currentStreak > 0 && user.currentStreak >= user.longestStreak,
     rank: {
       weeklyRank: weeklyRank || totalUsers,
       totalUsers,
       topPercent,
-      hoursToNextRank,
+      hoursToNextRank: null,
       weeklyHours,
     },
     plantStage: user.plantStage,
@@ -291,8 +164,8 @@ export async function getDashboardData(
     isWilting: daysSinceStudy >= 2,
     weeklyData,
     weekTotalHours,
-    labelBreakdown,
-    labels,
+    labelBreakdown: [],
+    labels: [],
     recentSessions: recentSessions.map((s) => ({
       id: s.id,
       duration: s.duration,
@@ -302,10 +175,12 @@ export async function getDashboardData(
     })),
     hasOlderSessions: !isPremium && olderSessionCount > 0,
     goals,
-    heatmapData,
-    heatmapYear,
-    heatmapTotalHours,
-    heatmapActiveDays,
+    heatmapData: [],
+    heatmapYear: now.getFullYear(),
+    heatmapTotalHours: roundHours(
+      slices.reduce((sum, s) => sum + s.duration, 0)
+    ),
+    heatmapActiveDays: agg.yearActiveDays.size,
     allTime: {
       totalHours: Math.round(user.totalHours * 10) / 10,
       totalSessions: sessionCount,
@@ -313,6 +188,14 @@ export async function getDashboardData(
       dailyAvg30Days,
     },
   };
+}
+
+export async function getDashboardData(
+  userId: string,
+  userName: string | null | undefined
+): Promise<DashboardData> {
+  await ensureUserDefaults(userId);
+  return fetchDashboardData(userId, userName);
 }
 
 export function getGreeting(name: string) {

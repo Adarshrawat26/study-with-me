@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncAllGoalProgress } from "@/lib/goal-progress";
@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     });
 
     revalidatePath("/dashboard");
+    revalidateTag(`dashboard-${session.user.id}`);
     revalidatePath("/goals");
     revalidatePath("/study-plant");
     revalidatePath("/leaderboard");
