@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeGoalProgressHours } from "@/lib/goal-progress";
 import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
+import { hasPremiumAccess } from "@/lib/premium-access";
 import { z } from "zod";
 
 export async function GET() {
@@ -34,9 +35,17 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isPremium: true, email: true },
+  });
   const count = await prisma.goal.count({ where: { userId: session.user.id } });
-  const limit = user?.isPremium ? PREMIUM_LIMITS.goals : FREE_LIMITS.goals;
+  const isPremium = hasPremiumAccess({
+    id: session.user.id,
+    email: user?.email ?? session.user.email,
+    isPremium: user?.isPremium,
+  });
+  const limit = isPremium ? PREMIUM_LIMITS.goals : FREE_LIMITS.goals;
 
   if (count >= limit) {
     return NextResponse.json({ error: `Goal limit reached (${limit})` }, { status: 403 });

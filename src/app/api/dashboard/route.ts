@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getWeekDates } from "@/lib/utils";
+import { hasPremiumAccess } from "@/lib/premium-access";
 
 export async function GET() {
   const session = await auth();
@@ -21,6 +22,7 @@ export async function GET() {
       currentStreak: true,
       longestStreak: true,
       isPremium: true,
+      email: true,
     },
   });
 
@@ -83,7 +85,13 @@ export async function GET() {
   const yearAgo = new Date();
   yearAgo.setFullYear(yearAgo.getFullYear() - 1);
 
-  const yearSessions = user?.isPremium
+  const isPremium = hasPremiumAccess({
+    id: userId,
+    email: user?.email ?? session.user.email,
+    isPremium: user?.isPremium,
+  });
+
+  const yearSessions = isPremium
     ? await prisma.studySession.findMany({
         where: { userId, createdAt: { gte: yearAgo } },
         select: { createdAt: true, duration: true },
@@ -105,6 +113,6 @@ export async function GET() {
     recentSessions,
     labelBreakdown,
     heatmap: Object.fromEntries(heatmapMap),
-    isPremium: user?.isPremium ?? false,
+    isPremium,
   });
 }

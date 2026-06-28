@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth.config";
 import { isGoogleAuthConfigured } from "@/lib/google-auth";
 import { ensureUserDefaults } from "@/lib/user-defaults";
+import { hasPremiumAccess } from "@/lib/premium-access";
 
 const providers = [];
 
@@ -75,10 +76,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { isPremium: true, currentStreak: true, totalHours: true },
+          select: {
+            isPremium: true,
+            email: true,
+            currentStreak: true,
+            totalHours: true,
+          },
         });
         if (dbUser) {
-          token.isPremium = dbUser.isPremium;
+          token.isPremium = hasPremiumAccess({
+            id: token.id as string,
+            email: dbUser.email,
+            isPremium: dbUser.isPremium,
+          });
           token.currentStreak = dbUser.currentStreak;
           token.totalHours = dbUser.totalHours;
         }

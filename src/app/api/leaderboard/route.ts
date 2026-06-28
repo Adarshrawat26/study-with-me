@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPremiumAccess } from "@/lib/premium-access";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
       totalHours: true,
       currentStreak: true,
       isPremium: true,
+      email: true,
       studySessions: period === "weekly"
         ? {
             where: { createdAt: { gte: weekStart } },
@@ -48,7 +50,11 @@ export async function GET(req: NextRequest) {
             : u.totalHours * 3600) / 3600 * 10
         ) / 10,
       streak: u.currentStreak,
-      isPremium: u.isPremium,
+      isPremium: hasPremiumAccess({
+        id: u.id,
+        email: u.email,
+        isPremium: u.isPremium,
+      }),
     }))
     .sort((a, b) => b.hours - a.hours)
     .map((u, i) => ({ ...u, rank: i + 1 }));

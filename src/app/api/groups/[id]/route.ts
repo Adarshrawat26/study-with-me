@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hasPremiumAccess } from "@/lib/premium-access";
 
 export async function GET(
   _req: Request,
@@ -22,6 +23,7 @@ export async function GET(
               name: true,
               image: true,
               isPremium: true,
+              email: true,
               totalHours: true,
               currentStreak: true,
               studySessions: {
@@ -66,7 +68,11 @@ export async function GET(
           (m.user.studySessions.reduce((s, ss) => s + ss.duration, 0) / 3600) * 10
         ) / 10,
       streak: m.user.currentStreak,
-      isPremium: m.user.isPremium,
+      isPremium: hasPremiumAccess({
+        id: m.user.id,
+        email: m.user.email,
+        isPremium: m.user.isPremium,
+      }),
     }))
     .sort((a, b) => b.hours - a.hours);
 
@@ -82,7 +88,11 @@ export async function GET(
       id: m.user.id,
       name: m.user.name,
       role: m.role,
-      isPremium: m.user.isPremium,
+      isPremium: hasPremiumAccess({
+        id: m.user.id,
+        email: m.user.email,
+        isPremium: m.user.isPremium,
+      }),
     })),
     messages: group.messages,
     leaderboard,
@@ -115,10 +125,15 @@ export async function POST(
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true },
+    select: { isPremium: true, email: true },
   });
 
-  const limit = user?.isPremium ? 30 : 3;
+  const isPremium = hasPremiumAccess({
+    id: session.user.id,
+    email: user?.email ?? session.user.email,
+    isPremium: user?.isPremium,
+  });
+  const limit = isPremium ? 30 : 3;
   if (memberCount >= limit) {
     return NextResponse.json(
       { error: `Group limit reached (${limit})` },

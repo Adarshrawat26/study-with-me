@@ -11,12 +11,17 @@ import { ensureUserDefaults } from "@/lib/user-defaults";
 import {
   aggregateSessions,
   buildWeeklyData,
+  buildDailyChartData,
+  buildMonthlyChartData,
+  buildHeatmapData,
+  averageSessionMinutes,
   computeGoalsProgressBatch,
   dailyAverageMinutes,
   roundHours,
   type SessionSlice,
 } from "@/lib/dashboard-algorithms";
 import type { DashboardData } from "@/types/dashboard";
+import { hasPremiumAccess } from "@/lib/premium-access";
 
 function getPlantStageName(stage: number) {
   return PLANT_STAGES[stage]?.name ?? "Seed";
@@ -51,6 +56,7 @@ async function fetchDashboardData(
     recentSessions,
     goalsRaw,
     totalUsers,
+    labelsRaw,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -59,6 +65,7 @@ async function fetchDashboardData(
         longestStreak: true,
         totalHours: true,
         isPremium: true,
+        email: true,
         plantStage: true,
         plantXP: true,
         lastStudiedAt: true,
@@ -95,12 +102,20 @@ async function fetchDashboardData(
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.count(),
+    prisma.label.findMany({
+      where: { userId },
+      select: { id: true, name: true, color: true },
+    }),
   ]);
 
   if (!user) throw new Error("User not found");
 
   const [sessionCount, pomodoroCount, olderSessionCount] = sessionCounts;
-  const isPremium = user.isPremium;
+  const isPremium = hasPremiumAccess({
+    id: userId,
+    email: user.email,
+    isPremium: user.isPremium,
+  });
 
   const slices: SessionSlice[] = yearSessions;
   const agg = aggregateSessions(slices, bounds);
@@ -116,6 +131,8 @@ async function fetchDashboardData(
     now,
     agg.weekDaySeconds
   );
+  const dailyChartData = buildDailyChartData(slices, bounds.todayStart, now);
+  const monthlyChartData = buildMonthlyChartData(slices, now);
   const weekTotalHours = roundHours(agg.weekSeconds);
   const weeklyHours = weekTotalHours;
   const weeklyRank = 1;
@@ -138,6 +155,43 @@ async function fetchDashboardData(
           (agg.last30DaySeconds / 3600 / agg.last30ActiveDays.size) * 10
         ) / 10
       : 0;
+
+  const labelBreakdown = labelsRaw
+    .map((l) => ({
+      labelId: l.id,
+      name: l.name,
+      color: l.color,
+      totalMinutes: Math.floor((agg.labelWeekSeconds.get(l.id) ?? 0) / 60),
+    }))
+    .filter((l) => l.totalMinutes > 0)
+    .sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+  const labelYearSeconds = new Map<string, number>();
+  for (const s of slices) {
+    if (s.labelId) {
+      labelYearSeconds.set(
+        s.labelId,
+        (labelYearSeconds.get(s.labelId) ?? 0) + s.duration
+      );
+    }
+  }
+  const yearTotalLabelSec = Array.from(labelYearSeconds.values()).reduce(
+    (a, b) => a + b,
+    0
+  );
+  const labels = labelsRaw.map((l) => {
+    const sec = labelYearSeconds.get(l.id) ?? 0;
+    return {
+      id: l.id,
+      name: l.name,
+      color: l.color,
+      totalMinutes: Math.floor(sec / 60),
+      proportion: yearTotalLabelSec > 0 ? sec / yearTotalLabelSec : 0,
+    };
+  });
+
+  const heatmapData = buildHeatmapData(slices, bounds.yearStart);
+  const avgSessionMinutes = averageSessionMinutes(slices, bounds.thirtyDaysAgo);
 
   return {
     userName: userName ?? "Student",
@@ -163,9 +217,12 @@ async function fetchDashboardData(
     lastStudiedAt: user.lastStudiedAt?.toISOString() ?? null,
     isWilting: daysSinceStudy >= 2,
     weeklyData,
+    dailyChartData,
+    monthlyChartData,
     weekTotalHours,
-    labelBreakdown: [],
-    labels: [],
+    labelBreakdown,
+    labels,
+    avgSessionMinutes,
     recentSessions: recentSessions.map((s) => ({
       id: s.id,
       duration: s.duration,
@@ -175,7 +232,7 @@ async function fetchDashboardData(
     })),
     hasOlderSessions: !isPremium && olderSessionCount > 0,
     goals,
-    heatmapData: [],
+    heatmapData,
     heatmapYear: now.getFullYear(),
     heatmapTotalHours: roundHours(
       slices.reduce((sum, s) => sum + s.duration, 0)

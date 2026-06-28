@@ -1,14 +1,18 @@
-import Link from "next/link";
-import { format } from "date-fns";
 import type { DashboardData } from "@/types/dashboard";
 import { partitionGoals } from "@/lib/dashboard-algorithms";
+import { DonezoHeroHeader } from "./DonezoHeroHeader";
 import { DonezoStatCards } from "./DonezoStatCards";
-import { DonezoWeeklyChart } from "./DonezoWeeklyChart";
+import { DonezoInsights } from "./DonezoInsights";
+import { DonezoAnalyticsChart } from "./DonezoAnalyticsChart";
 import { DonezoReminders } from "./DonezoReminders";
 import { DonezoGoalsList } from "./DonezoGoalsList";
 import { DonezoActivityFeed } from "./DonezoActivityFeed";
 import { DonezoProgressGauge } from "./DonezoProgressGauge";
 import { DonezoTimeTrackerCard } from "./DonezoTimeTrackerCard";
+import { DonezoSubjectChart } from "./DonezoSubjectChart";
+import { DonezoMiniHeatmap } from "./DonezoMiniHeatmap";
+import { DonezoPlantCard } from "./DonezoPlantCard";
+import { DonezoQuickActions } from "./DonezoQuickActions";
 
 interface DonezoDashboardProps {
   data: DashboardData;
@@ -19,34 +23,24 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
     partitionGoals(data.goals);
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-[#831843] sm:text-3xl">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-pink-400">
-            Plan, prioritize, and track your study sessions with ease.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/labels"
-            className="inline-flex items-center rounded-xl border-2 border-pink-500 bg-white px-4 py-2.5 text-sm font-semibold text-pink-600 transition hover:bg-pink-50"
-          >
-            Import labels
-          </Link>
-          <Link
-            href="/goals"
-            className="inline-flex items-center rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-pink-200 transition hover:bg-pink-700"
-          >
-            + Add goal
-          </Link>
-        </div>
+    <div className="mx-auto max-w-[1280px] space-y-5 sm:space-y-6">
+      <DonezoHeroHeader
+        userName={data.userName}
+        currentStreak={data.currentStreak}
+        longestStreak={data.longestStreak}
+        isNewRecord={data.isNewRecord}
+        todayMinutes={data.todayMinutes}
+        weekTotalHours={data.weekTotalHours}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <DonezoProgressGauge goals={data.goals} weekTotalHours={data.weekTotalHours} />
+        <DonezoTimeTrackerCard todayMinutes={data.todayMinutes} />
       </div>
 
       <DonezoStatCards
         totalSessions={data.allTime.totalSessions}
+        totalHours={data.allTime.totalHours}
         todayMinutes={data.todayMinutes}
         dailyAvgMinutes={data.dailyAvgMinutes}
         completedGoals={completedGoals}
@@ -55,29 +49,67 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
         currentStreak={data.currentStreak}
       />
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <DonezoWeeklyChart data={data.weeklyData} />
+      <DonezoInsights
+        weekTotalHours={data.weekTotalHours}
+        dailyAvgMinutes={data.dailyAvgMinutes}
+        todayMinutes={data.todayMinutes}
+        avgSessionMinutes={data.avgSessionMinutes}
+        totalPomodoros={data.allTime.totalPomodoros}
+        activeDaysThisYear={data.heatmapActiveDays}
+        totalHours={data.allTime.totalHours}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-12">
+        <div className="lg:col-span-8">
+          <DonezoAnalyticsChart
+            daily={data.dailyChartData}
+            weekly={data.weeklyData}
+            monthly={data.monthlyChartData}
+          />
         </div>
-        <div className="flex flex-col gap-5 lg:col-span-5">
+        <div className="flex flex-col gap-5 lg:col-span-4">
+          <DonezoPlantCard
+            plantStage={data.plantStage}
+            plantXP={data.plantXP}
+            plantStageName={data.plantStageName}
+            nextStageXP={data.nextStageXP}
+            isWilting={data.isWilting}
+          />
           <DonezoReminders goals={data.goals} />
-          <DonezoGoalsList goals={data.goals.slice(0, 3)} />
         </div>
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-12">
-        <div className="lg:col-span-7">
+      <div className="grid gap-5 lg:grid-cols-12">
+        <div className="lg:col-span-4">
+          <DonezoSubjectChart
+            data={data.labelBreakdown}
+            weekTotalHours={data.weekTotalHours}
+          />
+        </div>
+        <div className="lg:col-span-8">
+          <DonezoMiniHeatmap
+            data={data.heatmapData}
+            yearTotalHours={data.heatmapTotalHours}
+            yearActiveDays={data.heatmapActiveDays}
+            currentStreak={data.currentStreak}
+            longestStreak={data.longestStreak}
+            totalSessions={data.allTime.totalSessions}
+            avgSessionMinutes={data.avgSessionMinutes}
+            year={data.heatmapYear}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-12">
+        <div className="lg:col-span-12">
           <DonezoActivityFeed sessions={data.recentSessions} />
         </div>
-        <div className="flex flex-col gap-5 lg:col-span-5">
-          <DonezoProgressGauge goals={data.goals} weekTotalHours={data.weekTotalHours} />
-          <DonezoTimeTrackerCard todayMinutes={data.todayMinutes} />
-        </div>
       </div>
 
-      <p className="mt-8 text-center text-xs text-pink-300">
-        {format(new Date(), "EEEE, d MMMM yyyy")} · {data.heatmapActiveDays} active days this year
-      </p>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <DonezoGoalsList goals={data.goals.slice(0, 5)} />
+        <DonezoQuickActions />
+      </div>
     </div>
   );
 }

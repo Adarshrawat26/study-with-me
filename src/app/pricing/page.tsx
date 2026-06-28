@@ -21,7 +21,7 @@ const PLANS = [
     period: "forever",
     features: [
       "Basic timer (all modes)",
-      "3 subject labels",
+      "5 subject labels",
       "10 study goals",
       "Join 3 study groups",
       "10 AI prompts/month",

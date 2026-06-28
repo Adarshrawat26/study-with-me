@@ -4,10 +4,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncAllGoalProgress } from "@/lib/goal-progress";
 import { updateUserStreak, updatePlantProgress } from "@/lib/streak";
+import { MIN_SESSION_SECONDS } from "@/lib/study-session";
 import { z } from "zod";
 
 const sessionSchema = z.object({
-  duration: z.number().min(60),
+  duration: z.number().min(MIN_SESSION_SECONDS),
   mode: z.enum(["pomodoro", "stopwatch", "countdown", "focus"]),
   labelId: z.string().optional().nullable(),
 });

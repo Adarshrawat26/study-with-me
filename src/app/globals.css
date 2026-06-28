@@ -449,6 +449,30 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 8px 24px rgba(236, 72, 153, 0.1);
 }
 
+.donezo-hero {
+  animation: donezo-fade-in 0.5s ease-out;
+}
+
+.donezo-insight {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.donezo-insight:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(236, 72, 153, 0.08);
+}
+
+@keyframes donezo-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

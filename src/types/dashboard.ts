@@ -5,6 +5,14 @@ export interface WeeklyDayData {
   isFuture: boolean;
 }
 
+export interface AnalyticsBar {
+  label: string;
+  minutes: number;
+  isToday?: boolean;
+  isFuture?: boolean;
+  isCurrent?: boolean;
+}
+
 export interface LabelBreakdownItem {
   labelId: string;
   name: string;
@@ -75,6 +83,8 @@ export interface DashboardData {
   lastStudiedAt: string | null;
   isWilting: boolean;
   weeklyData: WeeklyDayData[];
+  dailyChartData: AnalyticsBar[];
+  monthlyChartData: AnalyticsBar[];
   weekTotalHours: number;
   labelBreakdown: LabelBreakdownItem[];
   labels: LabelSummaryItem[];
@@ -86,4 +96,5 @@ export interface DashboardData {
   heatmapTotalHours: number;
   heatmapActiveDays: number;
   allTime: AllTimeStatsData;
+  avgSessionMinutes: number;
 }

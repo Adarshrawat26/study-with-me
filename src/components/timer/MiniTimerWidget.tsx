@@ -13,7 +13,7 @@ interface MiniTimerWidgetProps {
 }
 
 export function MiniTimerWidget({ embed = false, onClose, className }: MiniTimerWidgetProps) {
-  const { mounted, state, toggle, reset } = useMiniTimer();
+  const { mounted, state, toggle, reset, saveAndReset, elapsedSeconds, showSave } = useMiniTimer();
 
   if (!mounted) return null;
 
@@ -47,6 +47,15 @@ export function MiniTimerWidget({ embed = false, onClose, className }: MiniTimer
         >
           Reset
         </button>
+        {showSave && (
+          <button
+            type="button"
+            onClick={() => void saveAndReset()}
+            className="rounded-full border border-pink-300 bg-pink-50 px-2.5 py-1.5 text-xs font-medium text-pink-600 transition hover:bg-pink-100"
+          >
+            Save {Math.floor(elapsedSeconds / 60)}m
+          </button>
+        )}
         {!embed && onClose && (
           <button
             type="button"

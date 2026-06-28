@@ -2,12 +2,14 @@ import {
   format,
   startOfDay,
   startOfWeek,
+  startOfMonth,
+  endOfMonth,
   max as maxDate,
   eachDayOfInterval,
   isSameDay,
   isAfter,
 } from "date-fns";
-import type { GoalItem, WeeklyDayData } from "@/types/dashboard";
+import type { AnalyticsBar, GoalItem, WeeklyDayData } from "@/types/dashboard";
 
 /** Minimal session fields for in-memory aggregation (single DB fetch). */
 export interface SessionSlice {
@@ -119,6 +121,56 @@ export function buildWeeklyData(
   });
 }
 
+/** Hourly buckets for today (6am–11pm). */
+export function buildDailyChartData(
+  sessions: SessionSlice[],
+  todayStart: Date,
+  now: Date
+): AnalyticsBar[] {
+  const hours = new Array(24).fill(0);
+  const todayMs = todayStart.getTime();
+  for (const s of sessions) {
+    if (s.createdAt.getTime() >= todayMs) {
+      hours[s.createdAt.getHours()] += Math.floor(s.duration / 60);
+    }
+  }
+  const fmtHour = (h: number) => {
+    if (h === 0) return "12a";
+    if (h < 12) return `${h}a`;
+    if (h === 12) return "12p";
+    return `${h - 12}p`;
+  };
+  return Array.from({ length: 18 }, (_, i) => i + 6).map((h) => ({
+    label: fmtHour(h),
+    minutes: hours[h],
+    isCurrent: h === now.getHours(),
+    isToday: true,
+  }));
+}
+
+/** Each day of the current month. */
+export function buildMonthlyChartData(
+  sessions: SessionSlice[],
+  now: Date
+): AnalyticsBar[] {
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
+  const dayMinutes = new Map<string, number>();
+  const monthStartMs = monthStart.getTime();
+  for (const s of sessions) {
+    if (s.createdAt.getTime() >= monthStartMs) {
+      const key = format(startOfDay(s.createdAt), "yyyy-MM-dd");
+      dayMinutes.set(key, (dayMinutes.get(key) ?? 0) + Math.floor(s.duration / 60));
+    }
+  }
+  return eachDayOfInterval({ start: monthStart, end: monthEnd }).map((date) => ({
+    label: String(date.getDate()),
+    minutes: dayMinutes.get(format(startOfDay(date), "yyyy-MM-dd")) ?? 0,
+    isToday: isSameDay(date, now),
+    isFuture: isAfter(date, now) && !isSameDay(date, now),
+  }));
+}
+
 export function dailyAverageMinutes(last7DayKeys: Map<string, number>): number {
   if (last7DayKeys.size === 0) return 0;
   let total = 0;
@@ -181,4 +233,34 @@ export function partitionGoals(goals: GoalItem[]) {
 
 export function roundHours(seconds: number): number {
   return Math.round((seconds / 3600) * 10) / 10;
+}
+
+export function buildHeatmapData(
+  sessions: SessionSlice[],
+  yearStart: Date
+): { date: string; minutes: number }[] {
+  const map = new Map<string, number>();
+  const yearMs = yearStart.getTime();
+  for (const s of sessions) {
+    if (s.createdAt.getTime() < yearMs) continue;
+    const key = format(startOfDay(s.createdAt), "yyyy-MM-dd");
+    map.set(key, (map.get(key) ?? 0) + Math.floor(s.duration / 60));
+  }
+  return Array.from(map.entries()).map(([date, minutes]) => ({ date, minutes }));
+}
+
+export function averageSessionMinutes(
+  sessions: SessionSlice[],
+  since: Date
+): number {
+  const sinceMs = since.getTime();
+  let totalSec = 0;
+  let count = 0;
+  for (const s of sessions) {
+    if (s.createdAt.getTime() >= sinceMs) {
+      totalSec += s.duration;
+      count++;
+    }
+  }
+  return count > 0 ? Math.floor(totalSec / 60 / count) : 0;
 }

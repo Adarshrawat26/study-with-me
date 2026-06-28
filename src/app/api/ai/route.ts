@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
+import { hasPremiumAccess } from "@/lib/premium-access";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
@@ -21,7 +22,13 @@ export async function POST(req: NextRequest) {
   });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  const limit = user.isPremium ? PREMIUM_LIMITS.aiPrompts : FREE_LIMITS.aiPrompts;
+  const limit = hasPremiumAccess({
+    id: user.id,
+    email: user.email,
+    isPremium: user.isPremium,
+  })
+    ? PREMIUM_LIMITS.aiPrompts
+    : FREE_LIMITS.aiPrompts;
 
   // Reset monthly usage
   const monthAgo = new Date();

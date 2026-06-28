@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import { Navbar } from "@/components/layout/Navbar";
@@ -53,6 +54,7 @@ export default function RootLayout({
           </main>
           <OnlineCounter />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );

@@ -83,12 +83,12 @@ export function DonezoProgressGauge({
           )}
         </svg>
         <div className="absolute inset-x-0 bottom-2 text-center">
-          <p className="text-3xl font-bold tabular-nums text-[#831843]">{overallPct}%</p>
-          <p className="text-xs text-pink-400">Goals on track</p>
+          <p className="text-4xl font-bold tabular-nums text-[#831843] sm:text-5xl">{overallPct}%</p>
+          <p className="text-sm text-pink-500">Goals on track</p>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-medium">
+      <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs font-medium sm:text-sm">
         <span className="flex items-center gap-1.5 text-pink-600">
           <span className="h-2 w-2 rounded-full bg-pink-400" />
           Completed

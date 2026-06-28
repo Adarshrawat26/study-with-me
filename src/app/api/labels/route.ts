@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
+import { hasPremiumAccess } from "@/lib/premium-access";
 import { z } from "zod";
 
 export async function GET() {
@@ -44,14 +45,19 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true },
+    select: { isPremium: true, email: true },
   });
 
   const count = await prisma.label.count({
     where: { userId: session.user.id },
   });
 
-  const limit = user?.isPremium ? PREMIUM_LIMITS.labels : FREE_LIMITS.labels;
+  const isPremium = hasPremiumAccess({
+    id: session.user.id,
+    email: user?.email ?? session.user.email,
+    isPremium: user?.isPremium,
+  });
+  const limit = isPremium ? PREMIUM_LIMITS.labels : FREE_LIMITS.labels;
   if (count >= limit) {
     return NextResponse.json(
       { error: `Label limit reached (${limit}). Upgrade to Premium.` },

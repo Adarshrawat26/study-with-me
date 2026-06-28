@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/components/ui/Toast";
-import { formatHours } from "@/lib/utils";
+import { formatHours, FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 interface LabelItem {
@@ -90,7 +90,9 @@ export default function LabelsPage() {
           </div>
           <button onClick={createLabel} className="btn-primary">Add</button>
         </div>
-        <p className="mt-3 text-xs text-[var(--text-muted)]">Free: 3 · Premium: 50</p>
+        <p className="mt-3 text-xs text-[var(--text-muted)]">
+          Free: {FREE_LIMITS.labels} · Premium: {PREMIUM_LIMITS.labels}
+        </p>
       </div>
 
       <div className="mt-6 space-y-2">

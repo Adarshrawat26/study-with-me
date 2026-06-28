@@ -7,6 +7,7 @@ import {
   DAY_LABELS,
   weekProgress,
 } from "@/lib/habits";
+import { hasPremiumAccess } from "@/lib/premium-access";
 import { z } from "zod";
 
 export async function GET() {
@@ -17,10 +18,16 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true },
+    select: { isPremium: true, email: true },
   });
 
-  if (!user?.isPremium) {
+  if (
+    !hasPremiumAccess({
+      id: session.user.id,
+      email: user?.email ?? session.user.email,
+      isPremium: user?.isPremium,
+    })
+  ) {
     return NextResponse.json({ error: "Premium required" }, { status: 403 });
   }
 
@@ -58,10 +65,16 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true },
+    select: { isPremium: true, email: true },
   });
 
-  if (!user?.isPremium) {
+  if (
+    !hasPremiumAccess({
+      id: session.user.id,
+      email: user?.email ?? session.user.email,
+      isPremium: user?.isPremium,
+    })
+  ) {
     return NextResponse.json({ error: "Premium required" }, { status: 403 });
   }
 

@@ -6,6 +6,7 @@ import {
   dateKey,
   weekProgress,
 } from "@/lib/habits";
+import { hasPremiumAccess } from "@/lib/premium-access";
 import { z } from "zod";
 
 const completeSchema = z.object({
@@ -21,10 +22,16 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { isPremium: true },
+    select: { isPremium: true, email: true },
   });
 
-  if (!user?.isPremium) {
+  if (
+    !hasPremiumAccess({
+      id: session.user.id,
+      email: user?.email ?? session.user.email,
+      isPremium: user?.isPremium,
+    })
+  ) {
     return NextResponse.json({ error: "Premium required" }, { status: 403 });
   }
 

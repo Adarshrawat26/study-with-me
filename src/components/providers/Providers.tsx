@@ -4,14 +4,14 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 
-import { MiniTimerProvider } from "@/components/providers/MiniTimerProvider";
+import { GlobalTimerProvider } from "@/components/providers/GlobalTimerProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider>
         <ToastProvider>
-          <MiniTimerProvider>{children}</MiniTimerProvider>
+          <GlobalTimerProvider>{children}</GlobalTimerProvider>
         </ToastProvider>
       </ThemeProvider>
     </SessionProvider>
