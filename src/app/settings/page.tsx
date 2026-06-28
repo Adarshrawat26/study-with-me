@@ -28,6 +28,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -127,6 +129,24 @@ export default function SettingsPage() {
     toast("Push notifications enabled!", "success");
   };
 
+  const resetAnalytics = async () => {
+    setResetting(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset-analytics" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast("Analytics reset — tracking starts fresh!", "success");
+      setResetConfirm(false);
+    } catch {
+      toast("Failed to reset analytics", "error");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const deleteAccount = async () => {
     const res = await fetch("/api/settings", { method: "DELETE" });
     if (res.ok) {
@@ -209,6 +229,39 @@ export default function SettingsPage() {
         <button onClick={saveSettings} disabled={saving} className="btn-primary w-full">
           {saving ? "Saving..." : "Save All Settings"}
         </button>
+
+        <section className="glass-card border-pink-200 p-6">
+          <h2 className="section-title mb-2">Reset analytics</h2>
+          <p className="mb-4 text-sm text-[var(--text-muted)]">
+            Clear all study sessions, streaks, plant progress, and goal progress. Your account, labels, and goals stay — analytics start from zero.
+          </p>
+          {!resetConfirm ? (
+            <button
+              type="button"
+              onClick={() => setResetConfirm(true)}
+              className="rounded-xl border border-pink-300 px-4 py-2 text-sm font-medium text-pink-700 hover:bg-pink-50"
+            >
+              Reset all analytics
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-pink-700">This cannot be undone. Continue?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={resetAnalytics}
+                  disabled={resetting}
+                  className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700 disabled:opacity-50"
+                >
+                  {resetting ? "Resetting..." : "Yes, reset everything"}
+                </button>
+                <button type="button" onClick={() => setResetConfirm(false)} className="btn-secondary text-sm">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
         <section className="glass-card border-red-500/30 p-6">
           <h2 className="section-title mb-4 text-red-400">Danger zone</h2>

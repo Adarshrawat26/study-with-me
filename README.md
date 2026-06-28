@@ -90,8 +90,10 @@ npm run start
 2. Import the project in [Vercel](https://vercel.com)
 3. Add environment variables from `.env.example`
 4. Set `AUTH_URL` to your production domain
-5. Use a hosted PostgreSQL (Neon, Supabase, Railway, etc.) for `DATABASE_URL`
-6. Run migrations: `npx prisma migrate deploy`
+5. **Create Vercel Postgres:** [Storage → Create Database → Postgres](https://vercel.com/adarshrawat26s-projects/study-with-me/stores) → connect to `study-with-me`
+6. Remove or ignore the old `DATABASE_URL` (localhost) — the build auto-uses `POSTGRES_PRISMA_URL` on Vercel
+7. Run migrations once: `npm run db:vercel-pull && npm run db:vercel-migrate`
+8. Redeploy
 
 ## Pages
 

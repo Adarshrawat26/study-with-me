@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resetUserAnalytics } from "@/lib/reset-analytics";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -84,6 +86,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
+
+  if (body.action === "reset-analytics") {
+    await resetUserAnalytics(session.user.id);
+    revalidatePath("/dashboard");
+    revalidatePath("/goals");
+    revalidatePath("/study-plant");
+    revalidatePath("/leaderboard");
+    revalidatePath("/habits");
+    return NextResponse.json({ ok: true, message: "Analytics reset" });
+  }
 
   if (body.action === "change-password") {
     const { currentPassword, newPassword } = passwordSchema.parse(body);
