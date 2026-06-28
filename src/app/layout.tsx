@@ -17,12 +17,24 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Study with me — Study Timer for JEE, NEET, UPSC & More",
+  title: "Study with me — your cute little pomodoro timer",
   description:
-    "Beautiful aesthetic study timer built for Indian students. Track sessions, build streaks, join study groups, and grow your virtual plant.",
+    "A soft pink pomodoro timer for cozy focus sessions. Start a timer, take breaks, track your streak, and grow your tiny study plant.",
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "Study with me — your cute little pomodoro timer",
+    description:
+      "A soft pink pomodoro timer for cozy focus sessions. Start a timer, take breaks, track your streak, and grow your tiny study plant.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Study with me — your cute little pomodoro timer",
+    description:
+      "A soft pink pomodoro timer for cozy focus sessions. Start a timer, take breaks, track your streak, and grow your tiny study plant.",
   },
 };
 
