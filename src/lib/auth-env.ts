@@ -1,4 +1,4 @@
-/** Normalize auth URL — fixes quoted localhost AUTH_URL on Vercel. */
+/** Normalize auth env vars — fixes quoted values pasted into Vercel. */
 function stripQuotes(value: string) {
   const trimmed = value.trim();
   if (
@@ -10,7 +10,22 @@ function stripQuotes(value: string) {
   return trimmed;
 }
 
-let authUrl = process.env.AUTH_URL ? stripQuotes(process.env.AUTH_URL) : undefined;
+function normalizeEnv(name: string) {
+  const raw = process.env[name];
+  if (!raw) return;
+  process.env[name] = stripQuotes(raw);
+}
+
+for (const key of [
+  "AUTH_URL",
+  "AUTH_SECRET",
+  "AUTH_GOOGLE_ID",
+  "AUTH_GOOGLE_SECRET",
+]) {
+  normalizeEnv(key);
+}
+
+let authUrl = process.env.AUTH_URL;
 
 if (process.env.VERCEL) {
   const isLocal = !authUrl || authUrl.includes("localhost") || authUrl.includes("127.0.0.1");
