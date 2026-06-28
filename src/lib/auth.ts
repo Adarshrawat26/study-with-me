@@ -84,5 +84,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return token;
     },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.isPremium = token.isPremium as boolean;
+        session.user.currentStreak = token.currentStreak as number;
+        session.user.totalHours = token.totalHours as number;
+      }
+      return session;
+    },
   },
 });

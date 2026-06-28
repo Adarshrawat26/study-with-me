@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/auth/signin",
     newUser: "/dashboard",
@@ -26,23 +27,6 @@ export const authConfig = {
       );
       if (isProtected) return !!auth;
       return true;
-    },
-    jwt({ token, user, trigger, session }) {
-      if (user) token.id = user.id;
-      if (trigger === "update" && session) {
-        token.name = session.name;
-        token.picture = session.image;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.isPremium = token.isPremium as boolean;
-        session.user.currentStreak = token.currentStreak as number;
-        session.user.totalHours = token.totalHours as number;
-      }
-      return session;
     },
   },
 } satisfies NextAuthConfig;
