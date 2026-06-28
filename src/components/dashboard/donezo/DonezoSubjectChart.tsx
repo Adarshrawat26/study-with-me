@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   PieChart,
@@ -10,6 +11,7 @@ import {
 } from "recharts";
 import type { LabelBreakdownItem } from "@/types/dashboard";
 import { formatMinutesHm } from "@/lib/dashboard-data";
+import { cn } from "@/lib/utils";
 
 const FALLBACK = ["#F9A8D4", "#F472B6", "#EC4899", "#DB2777", "#FBCFE8", "#BE185D"];
 
@@ -33,12 +35,21 @@ function ChartTooltip({
 }
 
 export function DonezoSubjectChart({
-  data,
+  weekData,
+  allTimeData,
   weekTotalHours,
+  allTimeTotalHours,
+  isPremium,
 }: {
-  data: LabelBreakdownItem[];
+  weekData: LabelBreakdownItem[];
+  allTimeData: LabelBreakdownItem[];
   weekTotalHours: number;
+  allTimeTotalHours: number;
+  isPremium: boolean;
 }) {
+  const [period, setPeriod] = useState<"week" | "all">("week");
+  const data = isPremium && period === "all" ? allTimeData : weekData;
+  const totalHours = isPremium && period === "all" ? allTimeTotalHours : weekTotalHours;
   const totalMinutes = data.reduce((s, d) => s + d.totalMinutes, 0);
   const chartData = data.map((d, i) => ({
     ...d,
@@ -48,14 +59,37 @@ export function DonezoSubjectChart({
 
   return (
     <div className="donezo-panel flex h-full flex-col rounded-2xl border border-pink-100/80 bg-white p-5 shadow-sm sm:p-6">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div>
           <h2 className="font-heading text-base font-bold text-[#831843]">Subject breakdown</h2>
-          <p className="text-xs text-pink-400">Where your time went this week</p>
+          <p className="text-xs text-pink-400">
+            {isPremium && period === "all" ? "All-time by label" : "Where your time went this week"}
+          </p>
         </div>
-        <span className="rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-600">
-          {weekTotalHours}h
-        </span>
+        <div className="flex items-center gap-2">
+          {isPremium && (
+            <div className="flex rounded-lg bg-pink-50 p-0.5 ring-1 ring-pink-100">
+              {(["week", "all"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriod(p)}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition",
+                    period === p
+                      ? "bg-white text-[#831843] shadow-sm"
+                      : "text-pink-400 hover:text-pink-600"
+                  )}
+                >
+                  {p === "week" ? "Week" : "All time"}
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="rounded-full bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-600">
+            {totalHours}h
+          </span>
+        </div>
       </div>
 
       {data.length === 0 ? (
@@ -89,7 +123,7 @@ export function DonezoSubjectChart({
               </ResponsiveContainer>
             </div>
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="font-heading text-lg font-bold text-[#831843]">{weekTotalHours}h</span>
+              <span className="font-heading text-lg font-bold text-[#831843]">{totalHours}h</span>
             </div>
           </div>
           <ul className="mt-2 space-y-2.5">

@@ -42,8 +42,8 @@ export default function StudyWithMePage() {
           <Link href="/focus" className="btn-secondary text-sm">
             Focus mode
           </Link>
-          <Link href="/exams" className="btn-secondary text-sm">
-            Exam timers
+          <Link href="/presets" className="btn-secondary text-sm">
+            Study presets
           </Link>
         </div>
 

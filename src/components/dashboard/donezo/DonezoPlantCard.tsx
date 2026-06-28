@@ -8,6 +8,7 @@ interface DonezoPlantCardProps {
   plantStageName: string;
   nextStageXP: number | null;
   isWilting: boolean;
+  isPremium?: boolean;
 }
 
 export function DonezoPlantCard({
@@ -16,6 +17,7 @@ export function DonezoPlantCard({
   plantStageName,
   nextStageXP,
   isWilting,
+  isPremium = false,
 }: DonezoPlantCardProps) {
   const xpPercent = nextStageXP ? Math.min(100, (plantXP / nextStageXP) * 100) : 100;
 
@@ -23,7 +25,10 @@ export function DonezoPlantCard({
     <div className="donezo-panel relative overflow-hidden rounded-2xl border border-pink-100/80 bg-gradient-to-br from-white to-pink-50/50 p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="font-heading text-base font-bold text-[#831843]">Study plant</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading text-base font-bold text-[#831843]">Study plant</h2>
+            {isPremium && <span className="badge-pro text-[9px]">Pro skin</span>}
+          </div>
           <p className="text-xs text-pink-400">Grows as you focus</p>
         </div>
         {isWilting && (
@@ -39,7 +44,7 @@ export function DonezoPlantCard({
           isWilting && "opacity-70 grayscale"
         )}
       >
-        <PlantVisual stage={plantStage} wilting={isWilting} size="sm" />
+        <PlantVisual stage={plantStage} wilting={isWilting} size="sm" premium={isPremium} />
       </div>
 
       <p className="text-center text-sm font-semibold text-[#831843]">{plantStageName}</p>

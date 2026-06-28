@@ -6,14 +6,17 @@ interface PlantVisualProps {
   stage: number;
   wilting?: boolean;
   size?: "sm" | "lg";
+  premium?: boolean;
 }
 
-export function PlantVisual({ stage, wilting = false, size = "lg" }: PlantVisualProps) {
+export function PlantVisual({ stage, wilting = false, size = "lg", premium = false }: PlantVisualProps) {
   const dim = size === "lg" ? 200 : 48;
   const scale = wilting ? 0.9 : 1;
-  const leafColor = wilting ? "#78716C" : "#10B981";
-  const trunkColor = wilting ? "#57534E" : "#92400E";
-  const potColor = wilting ? "#44403C" : "#7C3AED";
+  const leafColor = wilting ? "#78716C" : premium ? "#34D399" : "#10B981";
+  const trunkColor = wilting ? "#57534E" : premium ? "#B45309" : "#92400E";
+  const potColor = wilting ? "#44403C" : premium ? "#F59E0B" : "#7C3AED";
+  const bloomColor = premium ? "#FBBF24" : "#F472B6";
+  const auraColor = premium ? "#FDE68A" : "#A78BFA";
 
   return (
     <motion.svg
@@ -25,7 +28,23 @@ export function PlantVisual({ stage, wilting = false, size = "lg" }: PlantVisual
       animate={{ scale, opacity: wilting ? 0.65 : 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 15 }}
       className="mx-auto"
+      style={premium && !wilting ? { filter: "drop-shadow(0 0 8px rgba(251,191,36,0.35))" } : undefined}
     >
+      {premium && !wilting && (
+        <>
+          {[0, 1, 2].map((i) => (
+            <motion.circle
+              key={`sparkle-${i}`}
+              cx={40 + i * 55}
+              cy={30 + (i % 2) * 20}
+              r="2.5"
+              fill={auraColor}
+              animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.2, 0.8] }}
+              transition={{ repeat: Infinity, duration: 2.5, delay: i * 0.4 }}
+            />
+          ))}
+        </>
+      )}
       {/* Pot */}
       <rect x="70" y="155" width="60" height="35" rx="4" fill={potColor} opacity="0.8" />
       <rect x="65" y="150" width="70" height="10" rx="3" fill={potColor} />
@@ -82,7 +101,7 @@ export function PlantVisual({ stage, wilting = false, size = "lg" }: PlantVisual
               cx={100 + Math.cos((i * 72 * Math.PI) / 180) * 25}
               cy={70 + Math.sin((i * 72 * Math.PI) / 180) * 25}
               r="6"
-              fill="#F472B6"
+              fill={bloomColor}
               animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.7, 1, 0.7] }}
               transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
             />
@@ -140,10 +159,10 @@ export function PlantVisual({ stage, wilting = false, size = "lg" }: PlantVisual
   );
 }
 
-export function PlantStageIcon({ stage, active }: { stage: number; active: boolean }) {
+export function PlantStageIcon({ stage, active, premium = false }: { stage: number; active: boolean; premium?: boolean }) {
   return (
     <div className={`flex flex-col items-center ${active ? "opacity-100" : "opacity-40"}`}>
-      <PlantVisual stage={stage} size="sm" />
+      <PlantVisual stage={stage} size="sm" premium={premium} />
     </div>
   );
 }

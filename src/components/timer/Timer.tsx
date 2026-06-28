@@ -294,8 +294,8 @@ export function Timer({
               <Link href="/study-with-me" className="pill text-xs">
                 Study with me
               </Link>
-              <Link href="/exams" className="pill text-xs">
-                Exam timers
+              <Link href="/presets" className="pill text-xs">
+                Study presets
               </Link>
             </div>
           </div>

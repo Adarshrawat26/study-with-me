@@ -39,7 +39,7 @@ export const MOTIVATIONAL_QUOTES = [
   "Your only limit is your mind.",
   "Dream big, study hard, stay focused.",
   "Every hour of study brings you closer to your goal.",
-  "JEE/NEET rank is earned in the quiet hours.",
+  "Your best work is built in the quiet hours.",
   "Consistency beats intensity every single time.",
 ];
 
@@ -59,13 +59,20 @@ export const PLANT_STAGES = [
 export const FREE_LIMITS = {
   labels: 5,
   goals: 10,
-  groups: 3,
+  groupsJoin: 3,
+  groupsCreate: 0,
   aiPrompts: 10,
+  historyDays: 14,
 };
 
 export const PREMIUM_LIMITS = {
   labels: 50,
   goals: 50,
-  groups: 30,
+  groupsJoin: 30,
+  groupsCreate: 10,
   aiPrompts: 500,
+  historyDays: 365,
 };
+
+export const FREE_AI_MODES = ["chat"] as const;
+export const PREMIUM_AI_MODES = ["chat", "quiz", "flashcard", "summary"] as const;

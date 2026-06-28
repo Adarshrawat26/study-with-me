@@ -12,6 +12,7 @@ import { DonezoTimeTrackerCard } from "./DonezoTimeTrackerCard";
 import { DonezoSubjectChart } from "./DonezoSubjectChart";
 import { DonezoMiniHeatmap } from "./DonezoMiniHeatmap";
 import { DonezoPlantCard } from "./DonezoPlantCard";
+import { DonezoProBanner } from "./DonezoProBanner";
 import { DonezoQuickActions } from "./DonezoQuickActions";
 
 interface DonezoDashboardProps {
@@ -31,7 +32,17 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
         isNewRecord={data.isNewRecord}
         todayMinutes={data.todayMinutes}
         weekTotalHours={data.weekTotalHours}
+        isPremium={data.isPremium}
+        totalHours={data.allTime.totalHours}
       />
+
+      {data.isPremium && (
+        <DonezoProBanner
+          weekTotalHours={data.weekTotalHours}
+          prevWeekTotalHours={data.prevWeekTotalHours}
+          weekChangePercent={data.weekChangePercent}
+        />
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DonezoProgressGauge goals={data.goals} weekTotalHours={data.weekTotalHours} />
@@ -65,6 +76,7 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
             daily={data.dailyChartData}
             weekly={data.weeklyData}
             monthly={data.monthlyChartData}
+            isPremium={data.isPremium}
           />
         </div>
         <div className="flex flex-col gap-5 lg:col-span-4">
@@ -74,6 +86,7 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
             plantStageName={data.plantStageName}
             nextStageXP={data.nextStageXP}
             isWilting={data.isWilting}
+            isPremium={data.isPremium}
           />
           <DonezoReminders goals={data.goals} />
         </div>
@@ -82,8 +95,11 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
       <div className="grid gap-5 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <DonezoSubjectChart
-            data={data.labelBreakdown}
+            weekData={data.labelBreakdown}
+            allTimeData={data.allTimeLabelBreakdown}
             weekTotalHours={data.weekTotalHours}
+            allTimeTotalHours={data.allTime.totalHours}
+            isPremium={data.isPremium}
           />
         </div>
         <div className="lg:col-span-8">
@@ -96,19 +112,20 @@ export function DonezoDashboard({ data }: DonezoDashboardProps) {
             totalSessions={data.allTime.totalSessions}
             avgSessionMinutes={data.avgSessionMinutes}
             year={data.heatmapYear}
+            isPremium={data.isPremium}
           />
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-12">
         <div className="lg:col-span-12">
-          <DonezoActivityFeed sessions={data.recentSessions} />
+          <DonezoActivityFeed sessions={data.recentSessions} hasOlderSessions={data.hasOlderSessions} />
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DonezoGoalsList goals={data.goals.slice(0, 5)} />
-        <DonezoQuickActions />
+        <DonezoQuickActions isPremium={data.isPremium} />
       </div>
     </div>
   );

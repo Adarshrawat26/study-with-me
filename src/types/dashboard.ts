@@ -87,6 +87,9 @@ export interface DashboardData {
   monthlyChartData: AnalyticsBar[];
   weekTotalHours: number;
   labelBreakdown: LabelBreakdownItem[];
+  allTimeLabelBreakdown: LabelBreakdownItem[];
+  prevWeekTotalHours: number;
+  weekChangePercent: number | null;
   labels: LabelSummaryItem[];
   recentSessions: RecentSessionItem[];
   hasOlderSessions: boolean;

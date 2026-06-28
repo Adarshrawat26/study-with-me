@@ -6,7 +6,7 @@ import {
   format,
 } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import { PLANT_STAGES } from "@/lib/utils";
+import { PLANT_STAGES, FREE_LIMITS } from "@/lib/utils";
 import { ensureUserDefaults } from "@/lib/user-defaults";
 import {
   aggregateSessions,
@@ -110,14 +110,20 @@ async function fetchDashboardData(
 
   if (!user) throw new Error("User not found");
 
-  const [sessionCount, pomodoroCount, olderSessionCount] = sessionCounts;
   const isPremium = hasPremiumAccess({
     id: userId,
     email: user.email,
     isPremium: user.isPremium,
   });
 
-  const slices: SessionSlice[] = yearSessions;
+  const historyStart = isPremium
+    ? bounds.yearStart
+    : subDays(startOfDay(now), FREE_LIMITS.historyDays);
+
+  const [sessionCount, pomodoroCount, olderSessionCount] = sessionCounts;
+  const slices: SessionSlice[] = yearSessions.filter(
+    (s) => s.createdAt >= historyStart
+  );
   const agg = aggregateSessions(slices, bounds);
 
   const weekSessions = slices.filter(
@@ -132,8 +138,24 @@ async function fetchDashboardData(
     agg.weekDaySeconds
   );
   const dailyChartData = buildDailyChartData(slices, bounds.todayStart, now);
-  const monthlyChartData = buildMonthlyChartData(slices, now);
+  const monthlyChartData = isPremium ? buildMonthlyChartData(slices, now) : [];
   const weekTotalHours = roundHours(agg.weekSeconds);
+  const prevWeekStart = subDays(bounds.weekStart, 7);
+  const prevWeekEnd = endOfDay(subDays(bounds.weekStart, 1));
+  const prevWeekSeconds = yearSessions
+    .filter(
+      (s) => s.createdAt >= prevWeekStart && s.createdAt <= prevWeekEnd
+    )
+    .reduce((sum, s) => sum + s.duration, 0);
+  const prevWeekTotalHours = roundHours(prevWeekSeconds);
+  const weekChangePercent =
+    prevWeekTotalHours > 0
+      ? Math.round(
+          ((weekTotalHours - prevWeekTotalHours) / prevWeekTotalHours) * 100
+        )
+      : weekTotalHours > 0
+        ? 100
+        : null;
   const weeklyHours = weekTotalHours;
   const weeklyRank = 1;
   const topPercent = 50;
@@ -190,7 +212,19 @@ async function fetchDashboardData(
     };
   });
 
-  const heatmapData = buildHeatmapData(slices, bounds.yearStart);
+  const allTimeLabelBreakdown = labelsRaw
+    .map((l) => ({
+      labelId: l.id,
+      name: l.name,
+      color: l.color,
+      totalMinutes: Math.floor((labelYearSeconds.get(l.id) ?? 0) / 60),
+    }))
+    .filter((l) => l.totalMinutes > 0)
+    .sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+  const heatmapData = isPremium
+    ? buildHeatmapData(slices, bounds.yearStart)
+    : buildHeatmapData(slices, historyStart);
   const avgSessionMinutes = averageSessionMinutes(slices, bounds.thirtyDaysAgo);
 
   return {
@@ -221,6 +255,9 @@ async function fetchDashboardData(
     monthlyChartData,
     weekTotalHours,
     labelBreakdown,
+    allTimeLabelBreakdown: isPremium ? allTimeLabelBreakdown : [],
+    prevWeekTotalHours: isPremium ? prevWeekTotalHours : 0,
+    weekChangePercent: isPremium ? weekChangePercent : null,
     labels,
     avgSessionMinutes,
     recentSessions: recentSessions.map((s) => ({

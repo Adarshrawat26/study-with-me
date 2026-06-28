@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import type { AnalyticsBar, WeeklyDayData } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type Period = "daily" | "weekly" | "monthly";
 
@@ -61,21 +62,22 @@ interface DonezoAnalyticsChartProps {
   daily: AnalyticsBar[];
   weekly: WeeklyDayData[];
   monthly: AnalyticsBar[];
+  isPremium: boolean;
 }
 
-export function DonezoAnalyticsChart({ daily, weekly, monthly }: DonezoAnalyticsChartProps) {
+export function DonezoAnalyticsChart({ daily, weekly, monthly, isPremium }: DonezoAnalyticsChartProps) {
   const [period, setPeriod] = useState<Period>("weekly");
 
   const chartData = useMemo((): AnalyticsBar[] => {
     if (period === "daily") return daily;
-    if (period === "monthly") return monthly;
+    if (period === "monthly") return isPremium ? monthly : [];
     return weekly.map((d) => ({
       label: d.day.charAt(0),
       minutes: d.minutes,
       isToday: d.isToday,
       isFuture: d.isFuture,
     }));
-  }, [period, daily, weekly, monthly]);
+  }, [period, daily, weekly, monthly, isPremium]);
 
   const totalMinutes = chartData.reduce((s, d) => s + d.minutes, 0);
   const maxMinutes = Math.max(...chartData.map((d) => d.minutes), 1);
@@ -103,21 +105,25 @@ export function DonezoAnalyticsChart({ daily, weekly, monthly }: DonezoAnalytics
             <p className="mt-0.5 text-sm text-pink-500">{subtitle}</p>
           </div>
           <div className="flex rounded-xl bg-pink-50/80 p-1 ring-1 ring-pink-100">
-            {PERIODS.map((p) => (
+            {PERIODS.map((p) => {
+              const locked = p.id === "monthly" && !isPremium;
+              return (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => setPeriod(p.id)}
+                onClick={() => !locked && setPeriod(p.id)}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all sm:px-4 sm:text-sm",
                   period === p.id
                     ? "bg-white text-[#831843] shadow-sm shadow-pink-100"
-                    : "text-pink-400 hover:text-pink-600"
+                    : "text-pink-400 hover:text-pink-600",
+                  locked && "cursor-not-allowed opacity-60"
                 )}
               >
-                {p.label}
+                {p.label}{locked ? " 🔒" : ""}
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>
@@ -183,6 +189,15 @@ export function DonezoAnalyticsChart({ daily, weekly, monthly }: DonezoAnalytics
             No data
           </span>
         </div>
+
+        {!isPremium && (
+          <p className="mt-3 text-center text-xs text-pink-500">
+            Monthly view & full-year history are Premium —{" "}
+            <Link href="/pricing" className="font-semibold text-pink-600 hover:text-pink-800">
+              Upgrade
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import { ExamTimerPage } from "@/components/timer/ExamTimerPage";
+import { PresetTimerPage } from "@/components/timer/PresetTimerPage";
 
 export default function FocusTimerPage() {
-  return <ExamTimerPage exam="focus-timer" />;
+  return <PresetTimerPage preset="focus-timer" />;
 }

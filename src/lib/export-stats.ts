@@ -3,7 +3,28 @@ interface ExportStats {
   currentStreak: number;
   longestStreak: number;
   totalHours: number;
+  weekHours?: number;
   userName?: string;
+}
+
+export function exportStatsCsv(data: ExportStats) {
+  const rows = [
+    ["Metric", "Value"],
+    ["Today (hours)", String(data.todayHours)],
+    ["Current streak (days)", String(data.currentStreak)],
+    ["Best streak (days)", String(data.longestStreak)],
+    ["Total hours", String(data.totalHours)],
+  ];
+  if (data.weekHours != null) rows.push(["This week (hours)", String(data.weekHours)]);
+
+  const csv = rows.map((r) => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "study-with-me-stats.csv";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export function exportStatsImage(data: ExportStats) {

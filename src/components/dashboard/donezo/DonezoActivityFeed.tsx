@@ -5,6 +5,7 @@ import {
 } from "@/lib/dashboard-data";
 import type { RecentSessionItem } from "@/types/dashboard";
 import { cn } from "@/lib/utils";
+import { PremiumUpsell } from "@/components/ui/PremiumUpsell";
 
 function statusForSession(session: RecentSessionItem) {
   const hours = session.duration / 3600;
@@ -15,8 +16,10 @@ function statusForSession(session: RecentSessionItem) {
 
 export function DonezoActivityFeed({
   sessions,
+  hasOlderSessions = false,
 }: {
   sessions: RecentSessionItem[];
+  hasOlderSessions?: boolean;
 }) {
   return (
     <div className="donezo-panel rounded-2xl border border-pink-100/80 bg-white p-5 shadow-sm sm:p-6">
@@ -61,6 +64,17 @@ export function DonezoActivityFeed({
             );
           })}
         </ul>
+      )}
+
+      {hasOlderSessions && (
+        <div className="mt-4 border-t border-pink-50 pt-4">
+          <PremiumUpsell
+            compact
+            title="Older sessions hidden"
+            description=""
+            className="text-center"
+          />
+        </div>
       )}
     </div>
   );

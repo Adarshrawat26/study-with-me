@@ -1,5 +1,5 @@
-import { ExamTimerPage } from "@/components/timer/ExamTimerPage";
+import { PresetTimerPage } from "@/components/timer/PresetTimerPage";
 
 export default function HomeworkTimerPage() {
-  return <ExamTimerPage exam="homework-timer" />;
+  return <PresetTimerPage preset="homework-timer" />;
 }

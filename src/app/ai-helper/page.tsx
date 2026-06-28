@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { PremiumUpsell } from "@/components/ui/PremiumUpsell";
+import { cn } from "@/lib/utils";
 
 type AIMode = "chat" | "quiz" | "flashcard" | "summary";
 
@@ -13,20 +17,22 @@ interface Message {
 }
 
 const SUGGESTIONS = [
-  "Explain Newton's Laws for JEE",
+  "Explain Newton's Laws in simple terms",
   "Quiz me on Organic Chemistry",
-  "Make a study plan for JEE in 3 months",
-  "Summarize the Indian Constitution basics for UPSC",
+  "Make a 3-month study plan for physics",
+  "Summarize key ideas from a topic I'm revising",
 ];
 
-const MODES: { id: AIMode; label: string }[] = [
-  { id: "chat", label: "Chat" },
-  { id: "quiz", label: "Quiz" },
-  { id: "flashcard", label: "Flashcards" },
-  { id: "summary", label: "Summary" },
+const MODES: { id: AIMode; label: string; premium: boolean }[] = [
+  { id: "chat", label: "Chat", premium: false },
+  { id: "quiz", label: "Quiz", premium: true },
+  { id: "flashcard", label: "Flashcards", premium: true },
+  { id: "summary", label: "Summary", premium: true },
 ];
 
 export default function AIHelperPage() {
+  const { data: session } = useSession();
+  const isPremium = session?.user?.isPremium ?? false;
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -37,9 +43,23 @@ export default function AIHelperPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  const selectMode = (id: AIMode, locked: boolean) => {
+    if (locked) {
+      toast("Quiz, flashcards & summary are Premium features", "info");
+      return;
+    }
+    setMode(id);
+  };
+
   const sendMessage = async (text?: string) => {
     const msg = text ?? input;
     if (!msg.trim() || loading) return;
+
+    const modeConfig = MODES.find((m) => m.id === mode);
+    if (modeConfig?.premium && !isPremium) {
+      toast("This AI mode requires Premium", "error");
+      return;
+    }
 
     setInput("");
     setMessages((m) => [...m, { role: "user", content: msg }]);
@@ -69,23 +89,42 @@ export default function AIHelperPage() {
     <div className="page-shell flex h-[calc(100vh-4rem)] max-w-3xl flex-col">
       <PageHeader
         title="AI assistant"
-        subtitle={`Powered by Claude · ${usage.count}/${usage.limit} prompts this month`}
+        subtitle={`Powered by Claude · ${usage.count}/${usage.limit} prompts this month${isPremium ? " · all modes" : " · chat only"}`}
       />
 
+      {!isPremium && (
+        <PremiumUpsell
+          compact
+          className="mb-3"
+          title="Free: chat mode only (10/mo)"
+          description=""
+        />
+      )}
+
       <div className="mb-3 flex gap-2 overflow-x-auto">
-        {MODES.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setMode(id)}
-            className={`whitespace-nowrap rounded-[var(--radius)] px-3 py-1.5 text-xs font-medium transition-colors ${
-              mode === id
-                ? "bg-[var(--primary)] text-white"
-                : "border border-[var(--border-subtle)] text-[var(--text-muted)]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        {MODES.map(({ id, label, premium }) => {
+          const locked = premium && !isPremium;
+          return (
+            <button
+              key={id}
+              onClick={() => selectMode(id, locked)}
+              className={cn(
+                "whitespace-nowrap rounded-[var(--radius)] px-3 py-1.5 text-xs font-medium transition-colors",
+                mode === id
+                  ? "bg-[var(--primary)] text-white"
+                  : "border border-[var(--border-subtle)] text-[var(--text-muted)]",
+                locked && "opacity-60"
+              )}
+            >
+              {label}{locked ? " 🔒" : ""}
+            </button>
+          );
+        })}
+        {!isPremium && (
+          <Link href="/pricing" className="ml-auto self-center text-xs font-semibold text-[var(--primary)] hover:underline">
+            Upgrade for quiz & more →
+          </Link>
+        )}
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface)]/50 p-4">

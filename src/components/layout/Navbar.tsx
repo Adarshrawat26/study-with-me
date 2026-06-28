@@ -14,12 +14,12 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/labels", label: "Labels" },
   { href: "/goals", label: "Goals" },
+  { href: "/habits", label: "Habits" },
   { href: "/ai-helper", label: "AI" },
   { href: "/groups", label: "Groups" },
   { href: "/leaderboard", label: "Rankings" },
   { href: "/study-plant", label: "Plant" },
-  { href: "/habits", label: "Habits" },
-  { href: "/exams", label: "Exams" },
+  { href: "/presets", label: "Presets" },
   { href: "/focus", label: "Focus" },
 ];
 
@@ -44,7 +44,7 @@ export function Navbar() {
         </Link>
 
         <div className="hidden h-full items-center lg:flex">
-          {navLinks.slice(0, 6).map(({ href, label }) => (
+          {navLinks.slice(0, 7).map(({ href, label }) => (
             <Link
               key={href}
               href={href}

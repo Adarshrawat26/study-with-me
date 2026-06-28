@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { PLANT_STAGES } from "@/lib/utils";
 import { PlantVisual, PlantStageIcon } from "@/components/plant/PlantVisual";
@@ -14,6 +15,8 @@ interface PlantData {
 }
 
 export default function StudyPlantPage() {
+  const { data: session } = useSession();
+  const isPremium = session?.user?.isPremium ?? false;
   const [data, setData] = useState<PlantData | null>(null);
 
   useEffect(() => {
@@ -38,10 +41,24 @@ export default function StudyPlantPage() {
 
   return (
     <div className="page-shell-narrow text-center">
-      <PageHeader title="Study plant" subtitle="Grow your plant by studying consistently" />
+      <PageHeader
+        title="Study plant"
+        subtitle={
+          isPremium
+            ? "Pro garden skin — grow your plant by studying consistently"
+            : "Grow your plant by studying consistently"
+        }
+      />
+
+      {isPremium && (
+        <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+          <span className="badge-pro">Pro</span>
+          Golden plant skin active
+        </p>
+      )}
 
       <div className="my-8">
-        <PlantVisual stage={stage} wilting={isWilting} size="lg" />
+        <PlantVisual stage={stage} wilting={isWilting} size="lg" premium={isPremium} />
         {isWilting && (
           <motion.p
             initial={{ opacity: 0 }}
@@ -77,7 +94,7 @@ export default function StudyPlantPage() {
               key={s.stage}
               className={`rounded-lg p-1 text-xs ${s.stage <= stage ? "bg-success/20 text-success" : "bg-[var(--border)] text-[var(--text-muted)]"}`}
             >
-              <PlantStageIcon stage={s.stage} active={s.stage <= stage} />
+              <PlantStageIcon stage={s.stage} active={s.stage <= stage} premium={isPremium} />
               <p className="mt-1 truncate">{s.name}</p>
             </div>
           ))}

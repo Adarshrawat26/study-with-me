@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useToast } from "@/components/ui/Toast";
+import { PremiumUpsell } from "@/components/ui/PremiumUpsell";
+import { FREE_LIMITS } from "@/lib/utils";
 
 interface Group {
   id: string;
@@ -12,6 +16,10 @@ interface Group {
 }
 
 export default function GroupsPage() {
+  const { data: session } = useSession();
+  const { toast } = useToast();
+  const isPremium = session?.user?.isPremium ?? false;
+
   const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -26,17 +34,24 @@ export default function GroupsPage() {
   }, []);
 
   const createGroup = async () => {
+    if (!isPremium) {
+      toast("Creating groups is a Premium feature", "error");
+      return;
+    }
+
     const res = await fetch("/api/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, description, isPublic: true }),
     });
+    const data = await res.json();
     if (res.ok) {
-      const data = await res.json();
       setGroups((g) => [data.group, ...g]);
       setShowCreate(false);
       setName("");
       setDescription("");
+    } else {
+      toast(data.error ?? "Could not create group", "error");
     }
   };
 
@@ -48,13 +63,31 @@ export default function GroupsPage() {
     <div className="page-shell">
       <PageHeader
         title="Study groups"
-        subtitle="Study together, stay accountable"
+        subtitle={
+          isPremium
+            ? "Create and join study groups"
+            : `Join up to ${FREE_LIMITS.groupsJoin} groups · creating groups is Premium`
+        }
         action={
-          <button onClick={() => setShowCreate(true)} className="btn-primary">
-            Create group
-          </button>
+          isPremium ? (
+            <button onClick={() => setShowCreate(true)} className="btn-primary">
+              Create group
+            </button>
+          ) : (
+            <Link href="/pricing" className="btn-secondary">
+              Create group 🔒
+            </Link>
+          )
         }
       />
+
+      {!isPremium && (
+        <PremiumUpsell
+          className="mb-6"
+          title="Premium: create study groups"
+          description={`Free accounts can join up to ${FREE_LIMITS.groupsJoin} groups. Upgrade to create up to 10 groups and join 30.`}
+        />
+      )}
 
       <input
         value={search}
@@ -63,7 +96,7 @@ export default function GroupsPage() {
         className="input-field mb-6"
       />
 
-      {showCreate && (
+      {showCreate && isPremium && (
         <div className="glass-card mb-6 space-y-3 p-6">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Group name" className="input-field" />
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="input-field min-h-[80px] resize-none" />

@@ -1,9 +1,9 @@
 import { Timer } from "@/components/timer/Timer";
-import type { ExamTimerSlug } from "@/lib/exam-timers";
-import { EXAM_TIMERS } from "@/lib/exam-timers";
+import type { StudyPresetSlug } from "@/lib/study-presets";
+import { STUDY_PRESETS } from "@/lib/study-presets";
 
-export function ExamTimerPage({ exam }: { exam: ExamTimerSlug }) {
-  const config = EXAM_TIMERS[exam];
+export function PresetTimerPage({ preset }: { preset: StudyPresetSlug }) {
+  const config = STUDY_PRESETS[preset];
   return (
     <div className="relative min-h-[calc(100vh-4rem)]">
       <div className="relative z-[1] border-b border-[var(--border)] bg-[var(--surface)]/70 py-4 text-center backdrop-blur-sm">

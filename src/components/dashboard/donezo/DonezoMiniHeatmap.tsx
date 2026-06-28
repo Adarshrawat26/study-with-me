@@ -23,6 +23,7 @@ export function DonezoMiniHeatmap({
   totalSessions,
   avgSessionMinutes,
   year,
+  isPremium,
 }: {
   data: HeatmapCell[];
   yearTotalHours: number;
@@ -32,13 +33,15 @@ export function DonezoMiniHeatmap({
   totalSessions: number;
   avgSessionMinutes: number;
   year: number;
+  isPremium: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { days, maxMinutes, weekTotalHours, weekActiveDays } = useMemo(() => {
     const map = new Map(data.map((d) => [d.date, d.minutes]));
     const end = startOfDay(new Date());
-    const start = subDays(end, 83);
+    const dayCount = isPremium ? 83 : 13;
+    const start = subDays(end, dayCount);
     const interval = eachDayOfInterval({ start, end });
     const list = interval.map((date) => {
       const key = format(date, "yyyy-MM-dd");
@@ -52,7 +55,7 @@ export function DonezoMiniHeatmap({
       weekTotalHours: Math.round((weekMinutes / 60) * 10) / 10,
       weekActiveDays: list.filter((d) => d.minutes > 0).length,
     };
-  }, [data]);
+  }, [data, isPremium]);
 
   return (
     <>
@@ -60,7 +63,9 @@ export function DonezoMiniHeatmap({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="font-heading text-base font-bold text-[#831843]">Study consistency</h2>
-            <p className="mt-1 text-xs text-pink-400">Last 12 weeks · darker = more focus time</p>
+            <p className="mt-1 text-xs text-pink-400">
+              {isPremium ? "Last 12 weeks · darker = more focus time" : "Last 14 days · upgrade for full year"}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-lg font-bold tabular-nums text-[#831843]">{weekTotalHours}h</p>
@@ -68,8 +73,8 @@ export function DonezoMiniHeatmap({
           </div>
         </div>
 
-        <div className="grid grid-cols-[repeat(12,minmax(0,1fr))] gap-1 sm:gap-1.5">
-          {Array.from({ length: 12 }).map((_, weekIdx) => (
+        <div className={cn("grid gap-1 sm:gap-1.5", isPremium ? "grid-cols-[repeat(12,minmax(0,1fr))]" : "grid-cols-[repeat(2,minmax(0,1fr))]")}>
+          {Array.from({ length: isPremium ? 12 : 2 }).map((_, weekIdx) => (
             <div key={weekIdx} className="flex flex-col gap-1 sm:gap-1.5">
               {days.slice(weekIdx * 7, weekIdx * 7 + 7).map((cell) => (
                 <div
@@ -104,26 +109,31 @@ export function DonezoMiniHeatmap({
           </div>
           <button
             type="button"
-            onClick={() => setModalOpen(true)}
-            className="text-xs font-semibold text-pink-600 hover:text-pink-800"
+            onClick={() => isPremium && setModalOpen(true)}
+            className={cn(
+              "text-xs font-semibold text-pink-600 hover:text-pink-800",
+              !isPremium && "cursor-not-allowed opacity-60"
+            )}
           >
-            View full stats →
+            {isPremium ? "View full stats →" : "Full stats (Premium) 🔒"}
           </button>
         </div>
       </div>
 
-      <DonezoFullStatsModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        data={data}
-        yearTotalHours={yearTotalHours}
-        yearActiveDays={yearActiveDays}
-        currentStreak={currentStreak}
-        longestStreak={longestStreak}
-        totalSessions={totalSessions}
-        avgSessionMinutes={avgSessionMinutes}
-        year={year}
-      />
+      {isPremium && (
+        <DonezoFullStatsModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          data={data}
+          yearTotalHours={yearTotalHours}
+          yearActiveDays={yearActiveDays}
+          currentStreak={currentStreak}
+          longestStreak={longestStreak}
+          totalSessions={totalSessions}
+          avgSessionMinutes={avgSessionMinutes}
+          year={year}
+        />
+      )}
     </>
   );
 }

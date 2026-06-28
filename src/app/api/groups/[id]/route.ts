@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPremiumAccess } from "@/lib/premium-access";
+import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
 
 export async function GET(
   _req: Request,
@@ -133,7 +134,7 @@ export async function POST(
     email: user?.email ?? session.user.email,
     isPremium: user?.isPremium,
   });
-  const limit = isPremium ? 30 : 3;
+  const limit = isPremium ? PREMIUM_LIMITS.groupsJoin : FREE_LIMITS.groupsJoin;
   if (memberCount >= limit) {
     return NextResponse.json(
       { error: `Group limit reached (${limit})` },

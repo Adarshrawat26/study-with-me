@@ -1,6 +1,6 @@
-# Study with me — Study Timer for Indian Students
+# Study with me — Study Timer
 
-A full-stack aesthetic study timer web app built for JEE, NEET, UPSC, CAT, and GATE aspirants.
+A full-stack aesthetic study timer web app for focused study sessions.
 
 ## Tech Stack
 
@@ -114,11 +114,10 @@ npm run start
 | `/appearance` | Theme switcher |
 | `/settings` | User preferences |
 | `/pricing` | Razorpay plans |
-| `/jee-timer` | JEE exam timer |
-| `/neet-timer` | NEET exam timer |
-| `/upsc-timer` | UPSC exam timer |
-| `/cat-timer` | CAT exam timer |
-| `/gate-timer` | GATE exam timer |
+| `/presets` | Study preset timers |
+| `/focus-timer` | Deep focus preset |
+| `/homework-timer` | Homework preset |
+| `/adhd-timer` | Short focus sprint preset |
 
 ## Project Structure
 

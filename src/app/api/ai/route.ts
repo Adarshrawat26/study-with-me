@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FREE_LIMITS, PREMIUM_LIMITS } from "@/lib/utils";
-import { hasPremiumAccess } from "@/lib/premium-access";
+import { hasPremiumAccess, canUseAIMode, type AIMode } from "@/lib/premium-access";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
@@ -51,6 +51,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const data = aiSchema.parse(body);
 
+  const premiumUser = {
+    id: user.id,
+    email: user.email,
+    isPremium: user.isPremium,
+  };
+
+  if (!canUseAIMode(data.mode as AIMode, premiumUser)) {
+    return NextResponse.json(
+      { error: "Quiz, flashcards, and summary modes are Premium. Chat is free." },
+      { status: 403 }
+    );
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "AI service not configured. Add ANTHROPIC_API_KEY to .env" },
@@ -59,10 +72,10 @@ export async function POST(req: NextRequest) {
   }
 
   const systemPrompts: Record<string, string> = {
-    chat: "You are Study with me AI, a helpful study assistant for Indian students preparing for JEE, NEET, UPSC, CAT, and GATE exams. Be concise, accurate, and encouraging.",
-    quiz: "Generate exactly 5 multiple-choice questions (A-D) on the given topic for Indian competitive exams. Format each question clearly with options and mark the correct answer.",
-    flashcard: "Generate 8 flashcard pairs (Question/Answer format) on the given topic for Indian competitive exam preparation.",
-    summary: "Summarize the following text into clear, concise bullet points suitable for exam revision. Highlight key concepts.",
+    chat: "You are Study with me AI, a helpful study assistant for students. Be concise, accurate, and encouraging.",
+    quiz: "Generate exactly 5 multiple-choice questions (A-D) on the given topic. Format each question clearly with options and mark the correct answer.",
+    flashcard: "Generate 8 flashcard pairs (Question/Answer format) on the given topic for study and revision.",
+    summary: "Summarize the following text into clear, concise bullet points suitable for revision. Highlight key concepts.",
   };
 
   try {
